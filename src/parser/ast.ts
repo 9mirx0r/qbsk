@@ -92,6 +92,15 @@ export interface ConstDecl {
 export interface Param {
   name: string;
   typeAnnot: string | null;
+  /**
+   * The expression to use when the argument is not given (15.21), or null when the
+   * parameter is required.
+   *
+   * The EXPRESSION and not a value, deliberately: it is evaluated at every call that
+   * omits the argument, so `into = []` is a fresh list each time. Holding a value here
+   * would be the declaration-time model, in which every call shares one list.
+   */
+  defaultValue: Expr | null;
   span: Span;
 }
 
@@ -527,7 +536,11 @@ export function printStmt(stmt: Stmt, depth: number): string[] {
     }
     case "FuncDecl": {
       const params = stmt.params
-        .map((p) => `(Param ${p.name}${p.typeAnnot ? ` ${p.typeAnnot}` : ""})`)
+        .map(
+          (p) =>
+            `(Param ${p.name}${p.typeAnnot ? ` ${p.typeAnnot}` : ""}` +
+            `${p.defaultValue ? ` = ${exprText(p.defaultValue)}` : ""})`,
+        )
         .join(" ");
       const ret = stmt.returnAnnot ? ` -> ${stmt.returnAnnot}` : "";
       const exp = stmt.exported ? "export " : "";

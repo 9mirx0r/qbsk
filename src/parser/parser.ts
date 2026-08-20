@@ -808,34 +808,62 @@ class Parser {
     }
   }
 
+  /**
+   * The parameters of a function or a lambda, defaults included (§15.21).
+   *
+   * ONE function for both. They were two near-identical blocks, and the first version of
+   * this change added defaults to the declaration alone — which would have left
+   * `func(a, b = 2) a + b` reporting `expected ')' after the lambda parameters` with the
+   * caret on the `=`. Two spellings of the same list is how anti-pattern 6 gets in.
+   *
+   * `allowAnnot` is the one real difference: a declaration takes `a : int`, a lambda does
+   * not. Left as it was rather than widened here, because widening it is its own decision.
+   */
+  private parseParamList(allowAnnot: boolean): Param[] {
+    const params: Param[] = [];
+    // The first optional parameter seen, which every later one must also be.
+    let optional: string | null = null;
+    this.parseCommaSeparated(() => {
+      const paramToken = this.expectName("parameter name");
+      const name = this.nameOf(paramToken);
+      let typeAnnot: string | null = null;
+      if (allowAnnot && this.match("COLON")) {
+        const annotToken = this.expect("IDENTIFIER", "expected the parameter type");
+        typeAnnot = String(annotToken.value);
+      }
+      let defaultValue: Expr | null = null;
+      if (this.match("EQ")) {
+        defaultValue = this.parseExpression(0);
+        optional = name;
+      } else if (optional !== null) {
+        // Refused at the DECLARATION, because the call is where it stops being fixable:
+        // `f(2)` after `func f(a = 1, b)` has no honest reading, and the language would
+        // have to guess which parameter the 2 was for.
+        this.errorAt(
+          paramToken,
+          `parameter '${name}' is required but follows '${optional}', which has a default`,
+        );
+      }
+      params.push({
+        name,
+        typeAnnot,
+        defaultValue,
+        span: spanFrom(this.file, paramToken, this.previous()),
+      });
+    });
+    return params;
+  }
+
   private parseFuncDecl(): Stmt {
     const startToken = this.advance();
     const nameToken = this.expectName("function name");
     const name = this.nameOf(nameToken);
     this.expect("LPAREN", "expected '(' after the function name");
-    const params: Param[] = [];
-    // §14.6 — indentation inside ( ) carries no block meaning. Call argument lists
-    // already handled the spurious INDENT/DEDENT the lexer emits per physical line;
-    // declarations did not, so a parameter list broken across lines died on
-    // `expected the parameter name` and cascaded into five more errors. A language
-    // where `f(\n a,\n b\n)` works but `func f(\n a,\n b\n)` does not is teaching a
-    // distinction that does not exist.
-    this.parseCommaSeparated(() => {
-      const paramToken = this.expectName("parameter name");
-      let typeAnnot: string | null = null;
-      if (this.match("COLON")) {
-        const annotToken = this.expect(
-          "IDENTIFIER",
-          "expected the parameter type",
-        );
-        typeAnnot = String(annotToken.value);
-      }
-      params.push({
-        name: this.nameOf(paramToken),
-        typeAnnot,
-        span: spanFrom(this.file, paramToken, this.previous()),
-      });
-    });
+    // §14.6 — indentation inside ( ) carries no block meaning, and a parameter
+    // list broken across lines used to die on `expected the parameter name` and cascade
+    // into five more errors. `parseCommaSeparated` inside `parseParamList` keeps that
+    // fixed for the declaration and the lambda at once.
+    const params = this.parseParamList(true);
     this.expect("RPAREN", "expected ')' in the function signature");
     this.checkDuplicateParams(params, "function");
     let returnAnnot: string | null = null;
@@ -1324,6 +1352,11 @@ class Parser {
         params.push({
           name: this.nameOf(paramToken),
           typeAnnot,
+          // §15.21 — an event handler takes no defaults. The engine supplies
+          // every argument or none, so an optional one could never be omitted, and
+          // accepting the syntax would be a value the language reads and can never
+          // use (I2).
+          defaultValue: null,
           span: spanFrom(this.file, paramToken, this.previous()),
         });
       });
@@ -1354,6 +1387,7 @@ class Parser {
           params.push({
             name: this.nameOf(paramToken),
             typeAnnot: null,
+            defaultValue: null,
             span: paramToken.span,
           });
         });
@@ -1367,6 +1401,7 @@ class Parser {
         params.push({
           name: this.nameOf(paramToken),
           typeAnnot: null,
+          defaultValue: null,
           span: paramToken.span,
         });
       });
@@ -1865,20 +1900,7 @@ class Parser {
         // anonymous form is an expression; `func name(...)` remains a statement.
         this.advance();
         this.expect("LPAREN", "expected '(' after 'func' in a lambda");
-        const params: Param[] = [];
-        // §14.6 — as in a func declaration and a call. This mattered doubly here:
-        // the leftover INDENT then tripped the block-body guard below, so the third
-        // error advised converting the lambda to a named `func`, which failed the
-        // same way. An error that sends the author down a dead end is worse than
-        // silence, because it costs them the detour first.
-        this.parseCommaSeparated(() => {
-          const paramToken = this.expectName("parameter name");
-          params.push({
-            name: this.nameOf(paramToken),
-            typeAnnot: null,
-            span: paramToken.span,
-          });
-        });
+        const params = this.parseParamList(false);
         this.expect("RPAREN", "expected ')' after the lambda parameters");
         this.checkDuplicateParams(params, "lambda");
         if (this.check("COLON") || this.check("INDENT")) {

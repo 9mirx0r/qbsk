@@ -1,0 +1,42 @@
+// defaults.qbsk — a parameter can carry a default (docs/language.md §15.21)
+// Run: qbsk run examples/defaults.qbsk
+
+// A default lets the signature say what used to be said by a branch inside the body.
+func bar(value, width = 20, filled = "#", empty = ".")
+    var on = int(value * width + 0.5)
+    var out = ""
+    var i = 0
+    while i < width
+        if i < on
+            out = out + filled
+        else
+            out = out + empty
+        i += 1
+    return out
+
+print("stamina  " + bar(0.8))
+print("wounds   " + bar(0.3, 20, "*"))
+print("crowd    " + bar(0.55, 10, "=", " ") + "|")
+
+// A default is evaluated at the CALL, so a list default is a fresh list every time —
+// the collected items do not leak from one call into the next.
+func collect(item, into = [])
+    push(into, item)
+    return into
+
+print("first  " + str(collect("gladius")))
+print("second " + str(collect("scutum")))
+
+// A default may name a parameter already bound, which is the reason to evaluate at call
+// time at all: `count` is not expressible as a constant.
+func window(text, from = 0, count = len(text) - from)
+    return slice(text, from, from + count)
+
+print("whole  " + window("gladiator"))
+print("tail   " + window("gladiator", 5))
+print("middle " + window("gladiator", 3, 4))
+
+// Passing the argument skips the default entirely.
+var shout = func(word, times = 2) word * times
+print("twice  " + shout("ave "))
+print("once   " + shout("ave ", 1))

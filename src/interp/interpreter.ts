@@ -3075,16 +3075,26 @@ export class Interpreter {
       }
     }
     if (callee.type === "func") {
-      if (callee.params.length !== args.length) {
+      // §15.21 — with defaults an arity is a RANGE. The message keeps its old
+      // single-number form when there are none, because that is still the whole truth
+      // then, and `expects 2 to 2 arguments` is a worse sentence for the common case.
+      const total = callee.params.length;
+      let required = total;
+      for (let i = 0; i < total; i += 1) {
+        if (callee.params[i]!.defaultValue !== null) {
+          required = i;
+          break;
+        }
+      }
+      if (args.length < required || args.length > total) {
+        const wanted =
+          required === total ? `${total} arguments` : `${required} to ${total} arguments`;
         this.runtime(
-          `function '${callee.name}' expects ${callee.params.length} arguments, got ${args.length}`,
+          `function '${callee.name}' expects ${wanted}, got ${args.length}`,
           span,
         );
       }
       const callEnv = new Env(callee.closure);
-      callee.params.forEach((p, i) => {
-        callEnv.define(p.name, args[i]!, "var");
-      });
       // §15.4 — QBSK reports at ITS OWN documented depth. Left to V8 the program dies
       // with `Maximum call stack size exceeded`, no span, at whatever depth that host
       // happens to run out of frames — a different answer on a different machine.
@@ -3103,6 +3113,18 @@ export class Interpreter {
       this.loopDepth = 0;
       this.functionDepth += 1;
       try {
+        // The parameters are bound INSIDE the frame, left to right, so a default may
+        // name a parameter already bound — `count = len(text) - from` — and a
+        // default that fails reports from inside the call it belongs to.
+        for (let i = 0; i < total; i += 1) {
+          const p = callee.params[i]!;
+          // §15.21 — evaluated at CALL time and only when the argument is
+          // missing, so `into = []` is a fresh list per call. Evaluated once at the
+          // declaration it would be one list shared by every call, which is a bug the
+          // language would have taught.
+          const value = i < args.length ? args[i]! : this.visitExpr(p.defaultValue!);
+          callEnv.define(p.name, value, "var");
+        }
         this.execBody(callee.body);
         return { type: "null" };
       } catch (err) {

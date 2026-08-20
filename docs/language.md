@@ -2166,6 +2166,68 @@ saturated, while a real QBSK frame spends most of its time in the engine rather 
 dispatch. An error that names the route is worth 2% of the dispatch cost of a program that
 does nothing but dispatch.
 
+### 15.21 A parameter can carry a default (I1, I2)
+
+Every function took exactly as many arguments as it declared, so the only way to make one
+argument optional was to write two functions, or to take `null` and branch on it inside:
+
+```
+func bar(value, width, filled)
+    if filled == null
+        filled = "#"
+    ...
+```
+
+That is three lines saying what the signature should say, and it silently accepts a real
+`null` from a caller who did not mean to pass one. The default belongs where the reader
+looks for it:
+
+```
+func bar(value, width = 20, filled = "#")
+```
+
+**Defaults are evaluated at CALL time, and only for the arguments that were not given.**
+This is the part worth being deliberate about, because the other choice is a famous trap:
+a default evaluated once when the function is declared makes every call share one value,
+so a `list` default silently accumulates across calls and the language has taught a bug.
+Evaluating at call time costs one expression per missing argument per call, and the cost
+falls only on calls that omit it.
+
+They are evaluated **left to right, in the call's own environment**, so a default may name
+a parameter already bound:
+
+```
+func window(text, from = 0, count = len(text) - from)
+```
+
+That ordering is the reason to evaluate at call time at all — a default computed from the
+other arguments is not expressible any other way. A default naming a parameter to its
+RIGHT reports "is not defined", which is what it is.
+
+**A required parameter may not follow an optional one.** `func f(a = 1, b)` is refused at
+the declaration, because `f(2)` would have no honest reading — the language would have to
+guess whether `2` was `a` or `b`. Reported where the mistake is, on the required parameter:
+
+```
+t.qbsk:1:16 — parse: parameter 'b' is required but follows 'a', which has a default
+```
+
+Arity errors now name the range rather than one number:
+
+```
+function 'window' expects 1 to 3 arguments, got 4
+```
+
+Lambdas take defaults on the same terms: `func(a, b = 2) a + b`. The two parameter lists
+are parsed by ONE function for this reason — the first version of this change touched the
+declaration path alone, which would have left `func(a, b = 2)` reporting
+`expected ')' after the lambda parameters` and pointing at the `=`. A feature present in
+one of two places that look identical to the author is anti-pattern 6 with a new name.
+
+Event handlers (`on key (k)`) do NOT take defaults. Their arguments come from the engine,
+which supplies all of them or none, so an optional one could never be omitted — accepting
+the syntax there would be a value the language reads and can never use (I2).
+
 ### 15.11 A program can raise its own error — `fail` (I2, I3)
 
 `try`/`catch` has existed since L9, and every error it ever caught came from the engine.
