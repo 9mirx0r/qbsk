@@ -115,8 +115,8 @@ describe("every path the docs cite exists (§16.1)", () => {
     // Backticked paths under a known top-level directory. `docs/canvas-dsl.md`,
     // `docs/sprites.md` and `src/engine/terminal.ts` were all cited for months.
     // ⚠️ THE SECOND ALTERNATIVE IS THE ONE THAT WAS MISSING. This matched only paths
-    // UNDER a top-level directory, so a bare root-level file — `ROADMAP.md` — was
-    // invisible, and four documents cited one that does not ship. A guard against dangling
+    // UNDER a top-level directory, so a bare root-level `.md` file was invisible — and
+    // four documents were found citing one that does not ship. A guard against dangling
     // citations that cannot see the commonest shape of citation is half a guard.
     const PATH =
       /`((?:src|tests|examples|bench|docs|studio|skills)\/[A-Za-z0-9_./-]+\.[a-z]+|[A-Z][A-Za-z0-9_-]*\.md)`/g;
@@ -343,20 +343,18 @@ describe("every path a source comment cites exists (§16.1)", () => {
 });
 
 // ---------------------------------------------------------------------------
-// The ROADMAP teaches syntax that parses (§16.1)
+// The README teaches syntax that parses (§16.1)
 // ---------------------------------------------------------------------------
 
 describe("the README does not teach syntax the language rejects (§16.1)", () => {
   it("every qbsk block in README.md parses", () => {
-    // ROADMAP.md is aspirational by nature — it was written before the language
-    // existed — so its examples drifted furthest: a layer-level `anchor:` (a parse
-    // error since §14.2), `hero.animate(...)` method calls, `2s` duration literals,
-    // and a `timeline intro` block form §14.7 removed from the grammar. It is also
-    // the first document a newcomer reads.
+    // The README is the first thing anybody reads and the last thing anybody checks.
+    // Prose drifts from a language quietly; a code block that no longer parses is a
+    // newcomer's first five minutes spent on a syntax error the language never had.
     //
-    // Scoped to ROADMAP.md and tour.md on purpose: the SPEC deliberately shows
-    // illegal syntax while cataloguing mistakes (§14 is entirely that), so this
-    // check must not spread to the rest of docs/ — see §16.2.
+    // Scoped to the README on purpose: the SPEC deliberately shows ILLEGAL syntax
+    // while cataloguing mistakes (§14 is entirely that), so this check must not
+    // spread to the rest of docs/ — see §16.2.
     const text = readFileSync(join(ROOT, "README.md"), "utf8");
     const blocks = [...text.matchAll(/```qbsk\r?\n([\s\S]*?)```/g)];
     expect(blocks.length).toBeGreaterThan(0);
@@ -365,7 +363,7 @@ describe("the README does not teach syntax the language rejects (§16.1)", () =>
     for (const [i, m] of blocks.entries()) {
       const source = m[1]!;
       const line = text.slice(0, m.index).split("\n").length;
-      const parsed = parse(source, `ROADMAP.md:${line}`);
+      const parsed = parse(source, `README.md:${line}`);
       if (parsed.errors.length > 0) {
         broken.push(`block ${i + 1} (line ~${line}): ${parsed.errors[0]!.message}`);
       }

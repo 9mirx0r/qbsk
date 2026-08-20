@@ -1,11 +1,14 @@
-// roadmap_anim.qbsk — the animation surface M17/M18 actually shipped.
+// animation.qbsk — tweens and timelines
+// Run: qbsk run examples/animation.qbsk
 //
-// The ROADMAP described `hero.animate("x", from: 10, duration: 2s)` and a
-// `timeline intro` block form. None of that exists: there are no method calls, named
-// arguments are rejected on function calls, `2s` is not a literal, and `timeline` is
-// not a keyword (§14.7 removed it from the grammar because it never was one).
+// Animation in QBSK is a set of NATIVES, not a syntax. There are no method calls, no
+// named arguments on function calls, and no duration literals like `2s`: a tween is a
+// value you ask for, and a timeline is a value you query.
 //
-// What shipped is a native surface, and this file is the executable proof of it.
+// That is deliberate. A scheduler that runs in the background owns the clock, and the
+// engine already owns it — two clocks disagree the first time a frame is slow. Here
+// the frame asks what the animation looks like AT this moment, and gets an answer that
+// depends on nothing but the time it passed in.
 
 // --- Tweens (M17) -----------------------------------------------------------
 // animate(name, from, to, duration [, easing]) — host-side state keyed by name,

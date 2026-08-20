@@ -1,4 +1,5 @@
-// demo.qbsk — example scene
+// demo.qbsk — a scene with several layers, a palette and movement
+// Run: qbsk run examples/demo.qbsk
 scene Game(width: 120, height: 40, title: "QBSK Demo", fps: 30)
 
 layer sky z: 0

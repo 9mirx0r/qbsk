@@ -320,7 +320,7 @@ function runFrameLoop(
     });
   }
 
-  // Terminal resize (ROADMAP M19 DoD). Node raises "resize" on the stdout TTY for both
+  // Terminal resize. Node raises "resize" on the stdout TTY for both
   // SIGWINCH and the Windows console event, so one listener covers both and no signal
   // has to be handled by hand. Queued like a key: the program sees it inside step().
   if (interactive) {
