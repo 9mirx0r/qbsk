@@ -14,7 +14,15 @@ import { EngineConsole } from "./console.js";
 import { AudioDevice } from "../../src/audio/device.js";
 import { loadTileset, tileDataUrls } from "../../src/engine/tileset.js";
 import { formatQbskError } from "../../src/interp/error.js";
-import type { GridSmoke, LiveStart, SceneRun, TilesetLoad } from "../shared/api.js";
+import type {
+  GridSmoke,
+  InspectRow,
+  InspectState,
+  LiveStart,
+  SceneRun,
+  TilesetLoad,
+} from "../shared/api.js";
+import { clip, orderRows } from "../shared/inspect.js";
 
 // The live program and its clock (docs/studio.md §14.4). Module-level because there
 // is exactly one window and exactly one live program; a second would mean two clocks
@@ -328,6 +336,25 @@ void app.whenReady().then(() => {
     // resize that arrived between two scenes would otherwise reach a dead program.
     liveHost?.resize(cols, rows);
     return null;
+  });
+
+  // §19 — the names the live program holds. Built here rather than in the renderer
+  // because `varNames()` and `inspect()` belong to the host, and clipped here rather
+  // than there because an unclipped list of ten thousand cells would cross the IPC
+  // boundary before anyone decided it was too long to read.
+  ipcMain.handle("studio:inspect", (): InspectState => {
+    if (liveHost === null) {
+      return { live: false, rows: [] };
+    }
+    const host = liveHost;
+    const rows: InspectRow[] = [];
+    for (const name of host.varNames()) {
+      const found = host.inspect(name);
+      if (found !== null) {
+        rows.push({ name, type: found.type, text: clip(found.text) });
+      }
+    }
+    return { live: true, rows: orderRows(rows) };
   });
 
   ipcMain.handle("studio:stopLive", () => {

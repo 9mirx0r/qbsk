@@ -1,7 +1,16 @@
 import type { DiffLine } from "../../src/engine/diff.js";
 import type { ErrorMark } from "./marks.js";
+import type { InspectRow } from "./inspect.js";
 
 export type { ErrorMark };
+export type { InspectRow };
+
+/** What the live program is holding right now (docs/studio.md §19). */
+export interface InspectState {
+  /** False when nothing is running — a different sentence from "no names". */
+  live: boolean;
+  rows: InspectRow[];
+}
 
 // Shared, transport-safe shapes for the IPC boundary between the main process
 // and the renderer (docs/studio.md §3/§4). Types only: erased at runtime.
@@ -82,6 +91,14 @@ export interface StudioApi {
    */
   live(source: string, file: string, cellAspect?: number): Promise<LiveStart>;
   onFrame(handler: (frame: StudioFrame) => void): void;
+  /**
+   * The names the live program holds (docs/studio.md §19).
+   *
+   * PULLED by the renderer rather than pushed with each frame. A frame is sent 30 times
+   * a second and the pane is read by a person: pushing the whole variable set with every
+   * one would put a list nobody looked at through the IPC boundary 30 times a second.
+   */
+  inspect(): Promise<InspectState>;
   /** Called when a running scene stops because it failed (docs/studio.md §18). */
   onLiveError(handler: (failure: LiveFailure) => void): void;
   stopLive(): Promise<void>;

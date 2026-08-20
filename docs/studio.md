@@ -1219,3 +1219,53 @@ No syntax highlighting, no squiggly underline under the span, and no second erro
 `<textarea>` can do none of the first two without becoming a different editor, and QBSK
 reports one error at a time by design.
 
+## 19. The Inspector shows what the program is holding
+
+### 19.1 The problem
+
+The Inspector pane shipped with the first version of the Studio, and its contents were the
+sentence **"Populated in Phase 12 (qbsk_inspect)."** — a promise, in the window, where a
+feature should be. Anti-pattern 1 in its purest form: it renders, it costs a pane of screen
+space, and it does nothing.
+
+What makes it worse is that the machinery was already there. `StudioFrameHost.varNames()`
+and `.inspect(name)` have existed since the engine console was built, and `vars` and `get`
+have used them all along — **from the console, typed by hand, one name at a time.** Nothing
+called them from the window that has a pane reserved for exactly that.
+
+### 19.2 What it does now
+
+While a scene runs, the pane lists every name the live program holds: the name, its QBSK
+type, and the value as QBSK prints it. It refreshes as the scene runs, so a counter counts
+in the pane.
+
+### 19.3 What is worth knowing
+
+**Pulled, not pushed.** A frame is sent thirty times a second and the pane is read by a
+person. Refreshing per frame would put the whole variable set across the IPC boundary
+thirty times a second for a pane nobody is watching that closely, so the renderer asks,
+four times a second at most.
+
+**Clipped in the MAIN process.** A list of ten thousand cells is a legitimate QBSK value
+and `qbskStr` renders all of it. Clipping in the renderer would mean the whole string
+crossing the boundary before anyone decided it was too long to read.
+
+**Values first, functions last, and functions dimmed rather than hidden.** A program of
+any size declares more functions than variables and they do not change while it runs, so
+sorted together they push the handful of numbers that DO change off the bottom of the
+pane — which is the one thing the pane is for. They are still shown, because a pane that
+silently omitted half the names would be lying about what the program holds.
+
+**Two different nothings.** "No program is running — press Run" and "the program is
+running and holds no names" are not the same message. Saying "no variables" to someone who
+has not pressed Run sends them looking for a bug in their code.
+
+**Rows are built with `textContent`.** Every string in this pane was made up by the program
+being inspected, and this is the one pane whose entire job is showing them.
+
+### 19.4 What it does not do
+
+It does not let you EDIT a value, expand a list, or set a watch. Editing means writing into
+a running interpreter from outside it, which is a much larger decision than a read-only
+pane, and `get`/`set` in the engine console is the place that argument belongs.
+

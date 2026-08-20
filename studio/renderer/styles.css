@@ -557,3 +557,40 @@ body.play #playHint {
 .set-bind:hover {
   border-color: #6ea8d8;
 }
+
+/* --- The Inspector's rows (docs/studio.md §19) --- */
+
+.ins-row,
+.ins-fn {
+  display: flex;
+  gap: 6px;
+  padding: 1px 0;
+  align-items: baseline;
+}
+
+/* Functions are dimmed rather than hidden: they do not change while the scene runs, so
+   they are context, but a pane that silently omitted half the names would be lying. */
+.ins-fn {
+  opacity: 0.55;
+}
+
+.ins-name {
+  flex: none;
+  min-width: 84px;
+  color: var(--name);
+}
+
+.ins-type {
+  flex: none;
+  min-width: 44px;
+  color: var(--gutter);
+}
+
+.ins-value {
+  flex: 1;
+  min-width: 0;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

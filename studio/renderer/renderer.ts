@@ -9,6 +9,8 @@ import { showFatal, BOOT_HINT } from "./fatal.js";
 import { CRT_PRESETS, crtById } from "./glshader.js";
 import { fitFontSize, gridForBox, snapToFontGrid, CELL_ASPECT, cellAspectFor } from "./fit.js";
 import { gutterRows, selectionFor, stripText } from "../shared/marks.js";
+import { emptyText } from "../shared/inspect.js";
+import type { InspectState } from "../shared/api.js";
 import type { ErrorMark } from "../shared/marks.js";
 import { FONTS, DEFAULT_FONT_ID, fontById, type FontChoice } from "./fonts.js";
 
@@ -51,6 +53,7 @@ el("canvas").style.display = chosen.backend === "dom" ? "" : "none";
 const editor = el("editor") as HTMLTextAreaElement;
 const gutter = el("gutter");
 const errorStrip = el("errorStrip") as HTMLButtonElement;
+const inspector = el("inspector");
 const statusFile = el("stFile");
 const statusLnCol = el("stLnCol");
 const statusFps = el("stFps");
@@ -462,8 +465,59 @@ function applyFrame(frame: StudioFrame): void {
   }
   grid.paint(frame.diff);
   liveFrames += 1;
+  void refreshInspector();
   statusFps.textContent = `running · frame ${liveFrames}`;
   statusMs.textContent = `${frame.metrics.cells} cells`;
+}
+
+
+// --- The Inspector: what the live program is holding (docs/studio.md §19) --------
+
+/**
+ * When the pane was last filled, so a 30 Hz frame stream does not drive a 30 Hz refresh.
+ *
+ * The pane is read by a person, and four times a second is faster than anyone can follow
+ * a changing number. Refreshing per frame would put the whole variable set across the
+ * IPC boundary thirty times a second for a pane nobody is staring at that hard.
+ */
+let lastInspect = 0;
+const INSPECT_MS = 250;
+
+function drawInspector(state: InspectState): void {
+  inspector.replaceChildren();
+  if (state.rows.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "ins-empty";
+    empty.textContent = emptyText(state.live);
+    inspector.appendChild(empty);
+    return;
+  }
+  for (const row of state.rows) {
+    const line = document.createElement("div");
+    line.className = row.type === "func" || row.type === "native" ? "ins-fn" : "ins-row";
+    const name = document.createElement("span");
+    name.className = "ins-name";
+    name.textContent = row.name;
+    const type = document.createElement("span");
+    type.className = "ins-type";
+    type.textContent = row.type;
+    const value = document.createElement("span");
+    value.className = "ins-value";
+    // textContent, not innerHTML: every string here was made up by the program being
+    // inspected, and one of them containing `<` must not become markup.
+    value.textContent = row.text;
+    line.append(name, type, value);
+    inspector.appendChild(line);
+  }
+}
+
+async function refreshInspector(force = false): Promise<void> {
+  const now = performance.now();
+  if (!force && now - lastInspect < INSPECT_MS) {
+    return;
+  }
+  lastInspect = now;
+  drawInspector(await api.inspect());
 }
 
 async function startLive(source: string, file: string): Promise<void> {
@@ -483,6 +537,9 @@ async function startLive(source: string, file: string): Promise<void> {
   lastSent = "";
   void tellSceneTheSize();
   log("ok", "live → program running, keys go to the scene");
+  // Once immediately: the first frame is 33 ms away and an empty pane in the meantime
+  // reads as the Inspector not working rather than as it waiting.
+  void refreshInspector(true);
 }
 
 async function stopLive(): Promise<void> {
@@ -491,6 +548,7 @@ async function stopLive(): Promise<void> {
   }
   liveRunning = false;
   await api.stopLive();
+  void refreshInspector(true);
   log("ok", `live → stopped after ${liveFrames} frames`);
 }
 
