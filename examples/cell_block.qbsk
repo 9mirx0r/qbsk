@@ -16,7 +16,7 @@ scene CellBlock(width: 120, height: 48, title: "Kúlatho-Surún", fps: 20)
 
 // Who speaks, and in what colour. The Othári is the lore's own: `thoári` is one who
 // watches, `lidhári` is one who cannot cross, `murári-surún` is the arena surgeon
-// (LORE_BIBLE §5.3) — the words existed before the characters needed them.
+// the words existed before the characters needed them.
 const VOSK = {"name": "VOSK", "role": "thoári", "color": "bright-yellow"}
 const ADRIAN = {"name": "ADRIAN", "role": "lidhári 4077", "color": "cyan"}
 const MEDIC = {"name": "SERA", "role": "murári-surún", "color": "bright-green"}

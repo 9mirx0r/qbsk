@@ -1,6 +1,6 @@
 // jail_scene.qbsk — a photograph, converted.
 //
-// The holding level beneath the arena (LORE_BIBLE §5.1): the jailer at the bars with
+// The holding level beneath the arena (the setting's own notes): the jailer at the bars with
 // the torch behind him, the fighter sitting in the dark. None of it is hand-drawn.
 // `bench/image-to-grid.mjs` read a render and chose 4,800 glyphs from measured ink
 // coverage (§11.15) — this file just draws what it produced.

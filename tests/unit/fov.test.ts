@@ -212,7 +212,7 @@ describe("the sight() native", () => {
   });
 });
 
-describe("cost scales with the RADIUS, not the map (an earlier release measurement)", () => {
+describe("cost scales with the RADIUS, not the map", () => {
   // Found by bench/maps.mjs: sight at radius 11 took 1.8 ms on a 60-wide map and
   // 44 ms on a 2000-wide one. The algorithm is bounded by radius; the ALLOCATION was
   // not — the mask was built as one char array per cell of the whole map.

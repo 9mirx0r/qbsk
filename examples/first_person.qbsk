@@ -7,7 +7,7 @@
 //
 // TURN-BASED, not free-look. A key press moves or turns exactly one step and calls
 // `advance()`; nothing moves between presses. A turn is not a frame (§12), and this is
-// the shape the combatant game asks for: you look, you decide, you act.
+// the shape the gladiator game asks for: you look, you decide, you act.
 //
 //   qbsk run --ansi --loop examples/first_person.qbsk --fps 20
 

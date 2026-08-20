@@ -1,6 +1,6 @@
 // action_rules.qbsk — a QBSK-language Action + Rules engine.
 //
-// Phase 29 (the roadmap), reopening the CDDA/Qud audit's
+// An earlier release reopening the CDDA/Qud audit's
 // "D2: Action/Rules" item (the roadmap §4.3, §5.2) — the item right
 // after D1 (ECS Foundation, src/ecs/, still unwired: no real scene has measured a need
 // for it, see the D1-D5 "NOT adopted" decision above). D2 does not have that problem:
@@ -15,9 +15,9 @@
 // action may enqueue follow-on actions (bump -> open -> reveal; exile -> flee -> ...).
 // This library is the generic loop only — what an action MEANS, and what accepting it
 // actually changes in the world, is entirely up to the rule functions the caller writes.
-// That is deliberate, the same restraint Phase 27/28 both used: a generic "apply these
+// That is deliberate, the same restraint earlier releases both used: a generic "apply these
 // changes to any entity" primitive is not built until a second real caller needs one —
-// examples/worldgen_test.qbsk (Phase 29's own closing evidence) is the first.
+// examples/worldgen_test.qbsk (an earlier release's own closing evidence) is the first.
 //
 // Contract a rule function must follow:
 //   func myRule(action, state, pending) -> dict

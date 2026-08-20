@@ -153,7 +153,7 @@ five checks the project holds itself to.
 The suite includes `docs-truth`, which fails when a document claims something the code does
 not do — every count and every cited path in this README is verified by it.
 
-The frozen v0.1 surface is **the 51 keywords, the 85 natives** and the scene DSL.
+The frozen 1.0 surface is **the 51 keywords, the 85 natives** and the scene DSL.
 `docs/language.md` §17 says exactly what that promise covers and what it does not.
 
 ---

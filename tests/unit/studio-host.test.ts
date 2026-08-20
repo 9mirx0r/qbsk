@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { readScene, runStaticScene, StudioFrameHost } from "../../studio/main/host.js";
 import { keyFromDom } from "../../src/engine/keys.js";
 
-// an earlier release, criterion 5, headless: a QBSK file renders through the Studio host
+// An earlier release, criterion 5, headless: a QBSK file renders through the Studio host
 // exactly as the terminal renders it, and the host reuses src/engine/diff.ts
 // (docs/studio.md §4/§7). No Electron is involved — host.ts is pure.
 
@@ -86,7 +86,7 @@ describe("studio host: a QBSK scene reaches the grid (docs/studio.md §4)", () =
     expect(moved).toBe(true);
   });
 
-  it("frame host: a var mutated in on tick persists across frames (an earlier release)", () => {
+  it("frame host: a var mutated in on tick persists across frames", () => {
     const source = [
       "var n = 0",
       "on tick(dt)",

@@ -636,7 +636,7 @@ describe("parse: errors and recovery", () => {
   });
 });
 
-describe("parse: reserved names teach the cause, not the symptom (an earlier release, §15.15)", () => {
+describe("parse: reserved names teach the cause, not the symptom (§15.15)", () => {
   it("takes a scene word as a layer name, which §15.15 made legal", () => {
     // This asserted the opposite until 2026-08-19: `layer box z: 5` reported "'box' is a
     // scene primitive and cannot be a layer name". §15.15 freed all twenty-six scene

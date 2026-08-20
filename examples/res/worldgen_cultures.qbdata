@@ -1,15 +1,15 @@
-// worldgen_cultures.qbdata — Phase 28: three original civilizations, each with its own
+// worldgen_cultures.qbdata — an earlier release: three original civilizations, each with its own
 // name, demonym, language and religion — INSPIRED BY THE SPIRIT of three real-world
 // traditions (steppe horse-clans, a disciplined law-and-legion empire, a devout
 // seafaring court) WITHOUT naming, copying, or translating any of them. Every name,
-// word and belief below is invented for this project (16-qbsk-worldgen-design.md §4a:
+// word and belief below is invented for this project (the design notes §4a:
 // inspired by a mechanism/spirit, never a port of real content).
 //
 // Each culture still translates the SAME shared root-concept pool
-// (worldgen_concepts.qbdata) into its own sound (14-dwarf-fortress-worldgen-research.md
+// (worldgen_concepts.qbdata) into its own sound (the design notes
 // §2) — that mechanism is unchanged; what's new is the surrounding identity.
 //
-// Recorded-debt fix (Phase 28 closure): the pool grew from 12 to 26 concepts and every
+// Recorded-debt fix (an earlier release closure): the pool grew from 12 to 26 concepts and every
 // entry below now carries a phoneme for all 14 new ones, taking each culture from 6 to
 // 13-15 name candidates (see worldgen_concepts.qbdata's own header for the count).
 //

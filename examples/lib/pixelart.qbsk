@@ -1,14 +1,14 @@
-// pixelart.qbsk — Phase 32 V1: a symmetric, coherence-seeking pixel-art generator.
+// pixelart.qbsk — an earlier release's first version: a symmetric, coherence-seeking pixel-art generator.
 //
 // Algorithm: threshold -> smooth (cellular automaton) -> color -> mirror. Full Wave
 // Function Collapse is deliberately NOT this — named as the real next step in
-// 06-active-language-phases.md's Phase 32 design, once this simpler pipeline is proven
+// the design notes, once this simpler pipeline is proven
 // and a concrete need for adjacency-constrained variety (not just symmetric blobs) is
 // demonstrated. That's the same "measure the simple version before building the
-// expensive one" discipline Phase 25/26/27 all used.
+// expensive one" discipline earlier releases all used.
 //
-// Entropy stays host-side (bench/sprite-gen.mjs) — the same boundary Phase 27, 28, 29
-// and 31 all draw: QBSK has no bitwise operators, so no seeded PRNG can be a
+// Entropy stays host-side (bench/sprite-gen.mjs) — the same boundary earlier releases
+// all draw: QBSK has no bitwise operators, so no seeded PRNG can be a
 // QBSK-language library. `fillRolls`/`colorRolls` are pre-rolled [0,1) floats, sized
 // halfWidth*height each — only a HALF image is rolled; the other half is a mirror, not
 // independently generated, which is also what makes the result read as an intentional
@@ -103,7 +103,7 @@ func colorHalf(halfWidth, height, grid, colorRolls, paletteSize)
 // Adds a border color around the filled silhouette: an empty cell (0) that touches at
 // least one filled (non-zero) neighbor becomes `outlineIndex` instead of staying empty.
 // Found necessary by comparing against real reference sprites, not invented in
-// advance (06-active-language-phases.md's Phase 32 entry): weapon and creature sprites
+// advance (the design notes): weapon and creature sprites
 // alike are outlined; a filled region with no border reads as raw fill, not as an
 // intentional object. The SAME comparison found noise/texture belongs on MATERIALS
 // (walls, terrain) rather than on discrete object silhouettes — which is why this pass
@@ -163,7 +163,7 @@ func mirror(halfWidth, height, grid)
 
 // The full pipeline. Returns a flat, row-major list of palette indices,
 // (halfWidth*2)*height long — directly the `pixels` field of a `.qbdata` `pixel_sprite`
-// (06-active-language-phases.md's Phase 32 design §1).
+// (the design notes §1).
 //
 // `iterations` — found by inspection, not assumed: a first version ran smoothHalf ONCE
 // and the rendered result was a scattered checkerboard, not a blob (visually confirmed,
@@ -182,10 +182,10 @@ export func generate(halfWidth, height, fillRolls, colorRolls, paletteSize, fill
     var outlined = applyOutline(halfWidth, height, colored, outlineIndex)
     return mirror(halfWidth, height, outlined)
 
-// Phase 32 (mask-gated generation) — found live: `generate()` above has no way to
+// An earlier release (mask-gated generation) — found live: `generate()` above has no way to
 // target a specific recognizable silhouette (a sword, an axe, a creature category) —
 // it only ever produces symmetric organic noise. Researched exhaustively
-// (06-active-language-phases.md's Phase 32 entry): every technique that DOES produce a
+// (the design notes): every technique that DOES produce a
 // recognizable shape (Jdenticon's shape-primitive grids, RoboHash's part libraries,
 // WFC's adjacency rules) encodes that shape's structure by hand somewhere — none
 // invent it from noise alone. The cheapest version of that idea: a tri-state mask

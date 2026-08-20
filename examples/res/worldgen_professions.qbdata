@@ -1,5 +1,5 @@
-// worldgen_professions.qbdata — CDDA-style profession bundles, Phase 27
-// (15-cataclysm-dda-worldgen-research.md §5): skills + starting items in one template,
+// worldgen_professions.qbdata — CDDA-style profession bundles, an earlier release
+// (the design notes §5): skills + starting items in one template,
 // ready to attach to a spawned NPC without three separate systems to reconcile by hand.
 
 shape profession
@@ -12,7 +12,7 @@ GUARD    = {"glyph": "g", "skill": "melee",  "skill_level": 3, "starting_item": 
 MERCHANT = {"glyph": "m", "skill": "barter", "skill_level": 4, "starting_item": "ledger"}
 HERMIT   = {"glyph": "h", "skill": "herbalism", "skill_level": 5, "starting_item": "satchel"}
 
-// Phase 31 — a weighted population table (lib/population.qbsk), the D4 item Phase 27's
+// An earlier release — a weighted population table (lib/population.qbsk), the D4 item that release's
 // own generator (bench/worldgen-gen.mjs) never had: profession used to be assigned by
 // round-robin (i % 3), forcing an even split no real settlement has. Most people are
 // common folk; guards, merchants and hermits are progressively rarer — a plain

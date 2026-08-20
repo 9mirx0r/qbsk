@@ -1,6 +1,6 @@
 # QBSK — map size, and the decision not to build chunking
 
-an earlier release criterion 1: **measure whether anything needs a map bigger than memory** before
+An earlier release criterion 1: **measure whether anything needs a map bigger than memory** before
 designing C6. The phase said outright that "decide not to build it, and record why" was a
 valid outcome. This is that record.
 

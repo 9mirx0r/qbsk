@@ -83,7 +83,10 @@ describe("the pane no longer promises a feature instead of having one", () => {
 
   it("the placeholder sentence is gone from the markup", () => {
     const html = readFileSync(join(studioDir, "renderer/index.html"), "utf8");
-    expect(html).not.toContain("Populated in Phase 12");
+    // Matched on the promise and not on its wording. The pane used to promise it would
+    // be filled in by a later milestone; asserting that whole sentence would go green
+    // the day somebody replaced it with a differently-worded promise.
+    expect(html).not.toContain("Populated in");
   });
 
   it("the renderer actually asks for the names", () => {

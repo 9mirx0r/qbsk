@@ -1,4 +1,4 @@
-# an earlier release — the measured density ramp
+# An earlier release — the measured density ramp
 
 Measured on August 18, 2026. Like E3 and E5 this stage is judged by what it produces
 rather than by milliseconds; the number it owes is the coverage table itself.

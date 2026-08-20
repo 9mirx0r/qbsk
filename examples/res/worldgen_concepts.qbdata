@@ -1,16 +1,16 @@
-// worldgen_concepts.qbdata — Phase 28: the shared root-concept pool.
+// worldgen_concepts.qbdata — an earlier release: the shared root-concept pool.
 //
 // Original QBSK content, inspired by the MECHANISM Dwarf Fortress's Language system
-// uses (14-dwarf-fortress-worldgen-research.md §2: one shared pool of root concepts,
+// uses (the design notes §2: one shared pool of root concepts,
 // each culture translates the same concept into its own sound) — never a copy of DF's
 // actual word list, which this project has no access to and would not copy if it did
-// (16-qbsk-worldgen-design.md §4a).
+// (the design notes §4a).
 //
 // Every culture in worldgen_cultures.qbdata draws its names from a FILTERED subset of
 // this pool (by category), the same way a Dwarven name leans on "martial" concepts and
 // never draws from "domestic" ones.
 //
-// Recorded debt (Phase 28 closure): the original 12-concept pool gave each culture only
+// Recorded debt (an earlier release closure): the original 12-concept pool gave each culture only
 // 6 candidates, measured at 38% collision (62/100 unique) in a batch test. This is the
 // fix — 26 concepts total, chosen so every one of the 15 possible category-pairs has at
 // least one entry, taking each culture from 6 to 13-15 candidates. See

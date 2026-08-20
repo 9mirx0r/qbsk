@@ -1,4 +1,4 @@
-// Phase E1 reference workload: 12,000 deterministic primitives in one static layer.
+// An earlier release reference workload: 12,000 deterministic primitives in one static layer.
 scene StaticHeavy(width: 300, height: 90, title: "static only", fps: 60)
 
 layer scenery z: 0

@@ -238,7 +238,7 @@ const STMT_STARTS = new Set<TokenType>([
   "ANCHOR",
 ]);
 
-// an earlier release: keyword classification for the DSL name slots (layer/scene/canvas).
+// An earlier release: keyword classification for the DSL name slots (layer/scene/canvas).
 // The DSL vocabulary is globally reserved (spec §2.6), so a name slot that hits a
 // keyword reports the CAUSE — "'box' is a scene primitive and cannot be a layer
 // name" — not the symptom "expected the layer name".

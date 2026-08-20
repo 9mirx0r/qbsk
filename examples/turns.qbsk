@@ -150,10 +150,10 @@ on turn(n)
         // can never be drawn, and each goblin carries the "id" spawn gave it — that id
         // is what survives the rebuild and lets a goblin be the same goblin next turn
         // (docs/engine.md §12.2). Rebuilding is a CHOICE here, not a limitation: since
-        // Phase 30, `goblins[i]["hp"] -= 1` is valid QBSK and would edit in place.
+        // An earlier release, `goblins[i]["hp"] -= 1` is valid QBSK and would edit in place.
         // (This comment used to deny that index assignment exists. It read as a
         // language limit rather than a design decision, and cost a reader a rewrite
-        // of code that was already possible — corrected in Phase 33.)
+        // of code that was already possible — corrected in an earlier release.)
         var gx = g["x"]
         var gy = g["y"]
         // A* over the map (docs/engine.md §13). The route includes both ends, so
@@ -168,7 +168,7 @@ on turn(n)
             var step = route[1]
             if step[0] == playerX and step[1] == playerY
                 touched = true
-                // Goblin dies on contact: remove it by id using `without` (Phase 22).
+                // Goblin dies on contact: remove it by id using `without` (an earlier release).
                 next = without(next, g["id"])
             else
                 gx = step[0]

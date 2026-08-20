@@ -168,7 +168,7 @@ describe("a corridor seen from inside it", () => {
   });
 
   it("gives every guard a stable identity from spawn", () => {
-    // an earlier release's `spawn` is what makes these entities rather than dicts, and the ids must
+    // An earlier release's `spawn` is what makes these entities rather than dicts, and the ids must
     // survive the turns that move them.
     const p = started();
     const first = view(p).split(NL)[33]!;

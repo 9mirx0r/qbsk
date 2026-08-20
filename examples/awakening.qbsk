@@ -3,7 +3,7 @@
 // Black. Then two eyes open. They look left, look right. A breath fogs in the
 // cold. Black again — and he is awake, and Vosk is at the bars.
 //
-// The whole cinematic is ONE timeline (Phase 17). Every beat is a named step with
+// The whole cinematic is ONE timeline (an earlier release). Every beat is a named step with
 // its own duration, so the pacing lives in one readable block at the top instead
 // of being scattered through counters. Nothing here is a frame counter.
 //   qbsk run --ansi --loop examples/awakening.qbsk --fps 20
@@ -11,7 +11,7 @@ scene Awakening(width: 78, height: 26)
 
 // --- who is who -----------------------------------------------------------
 // Each speaker carries their own voice. `pitch` is the beep frequency: Vosk is
-// the bigger man and speaks lower. Phase 19 made these real — the tones below
+// the bigger man and speaks lower. An earlier release made these real — the tones below
 // gate on who is talking, so the conversation beeps in two voices.
 const PRISONER = {"name": "Adrian", "tag": "4077", "pitch": 180, "color": "cyan"}
 const JAILER = {"name": "Vosk", "tag": "warden", "pitch": 96, "color": "green"}

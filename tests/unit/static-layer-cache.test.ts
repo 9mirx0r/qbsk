@@ -22,7 +22,7 @@ function report(source: string) {
   return analyzeLayerStaticity(parsed(source));
 }
 
-describe("static-layer classification (static-layer)", () => {
+describe("static-layer classification", () => {
   it("proves literal and const-only layers static with an explainable report", () => {
     const layers = report(`
 const label = "still"
@@ -288,7 +288,7 @@ layer moving_shade z: 1
   });
 });
 
-describe("whole-layer cache (static-layer)", () => {
+describe("whole-layer cache", () => {
   const paritySource = `
 var x = 0
 on tick(dt)

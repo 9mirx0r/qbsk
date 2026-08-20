@@ -1,8 +1,8 @@
-// an earlier release benchmark (the roadmap 06 an earlier release, criterion 2): dict-list entities
+// An earlier release benchmark (the roadmap 06 that release, criterion 2): dict-list entities
 // (an earlier release) vs. the D1 archetype ECS (src/ecs/, commit 32c7457 — correct and tested,
 // deliberately unwired from the language), measured against THIS phase's actual entity
-// shape — nested facet/value dicts (14-dwarf-fortress-worldgen-research.md §3), a
-// profession bundle (15-cataclysm-dda-worldgen-research.md §5) — not a generic
+// shape — nested facet/value dicts (the design notes §3), a
+// profession bundle (the design notes §5) — not a generic
 // microbenchmark. Extends bench/entities.mjs's method to a richer, real shape.
 //
 //   node bench/worldgen-entities.mjs [counts...]     default: 50 200 500 1000 2000
@@ -75,7 +75,7 @@ const source = (n) =>
 const TURNS = 60;
 
 console.log(
-  "an earlier release — worldgen entity shape — ms per turn, averaged over " + TURNS + " turns\n",
+  "worldgen entity shape — ms per turn, averaged over " + TURNS + " turns\n",
 );
 console.log("  count |    QBSK |     ECS |  ratio | verdict");
 console.log("  ------+---------+---------+--------+--------");

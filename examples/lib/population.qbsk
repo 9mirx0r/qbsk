@@ -1,26 +1,26 @@
 // population.qbsk — weighted population tables.
 //
-// Phase 31 (the roadmap), the "Population Tables" item
+// An earlier release the "Population Tables" item
 // from the CDDA/Qud audit's D4 (the roadmap §4.5, §5.2 —
 // "Tables + noise -> spawn() from tables"). Closes a real gap found while reopening
-// D1-D5, not a hypothetical one: Phase 27's own generator
+// D1-D5, not a hypothetical one: an earlier release's own generator
 // (bench/worldgen-gen.mjs) assigned NPC professions by round-robin
 // (`PROFESSIONS[i % PROFESSIONS.length]`) because there was no weighted-table
 // mechanism — a settlement's professions were forced into an even split no real
 // population has (most people are common folk; guards, merchants, hermits are
 // progressively rarer).
 //
-// Same split as every other host/QBSK boundary this project draws (Phase 27's
-// personality rolls, Phase 28's name selection, Phase 29's rule engine): the RNG draw
+// Same split as every other host/QBSK boundary this project draws (an earlier release's
+// personality rolls, an earlier release's name selection, that release's rule engine): the RNG draw
 // stays host-side (QBSK has no bitwise operators, so no seeded PRNG can be written as a
-// QBSK-language library — named in Phase 27, still true here) — but the WEIGHTED-TABLE
+// QBSK-language library — named in an earlier release, still true here) — but the WEIGHTED-TABLE
 // ALGORITHM itself does not need randomness to express, only a pre-rolled number to
 // consume, so it is real, testable, composable QBSK code, not another host script.
 //
 // Contract: a table is a dict {"entries": [{"value": ..., "weight": int}, ...]}` —
 // weights are relative, not required to sum to any particular total. `roll` is a float
 // in [0, 1) (whatever the host's seeded RNG produced for this pick, stored plainly in a
-// `.qbdata` field, exactly like Phase 28's `nameRng` draws).
+// `.qbdata` field, exactly like an earlier release's `nameRng` draws).
 
 // Four ways this could be asked a question with no answer, and until `fail` existed
 // (docs/language.md §15.11) it answered all four with the LAST ENTRY — which reads as a

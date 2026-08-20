@@ -1,4 +1,4 @@
-// an earlier release — shared core for procedural pixel-art generation. One implementation, used
+// An earlier release — shared core for procedural pixel-art generation. One implementation, used
 // by both bench/sprite-gen.mjs (CLI) and Studio's `qbsk_generate_sprite` MCP tool
 // (studio/mcp/session.ts) — not two copies of the same entropy-plus-QBSK-call pipeline.
 //
@@ -19,7 +19,7 @@ import { edgeGlyph, sobelAt } from "../engine/stroke.js";
 const CREATURE_FILL_COLORS = ["#2d1b0e", "#5c3d1e", "#8b5a2b", "#c9945a", "#e8c896"];
 const CREATURE_OUTLINE = "#140b05";
 
-// Tuned by rendering and looking (06-active-language-phases.md's an earlier release entry records
+// Tuned by rendering and looking (the design notes records
 // what was tried and rejected before landing here): a single smoothing pass gave a
 // scattered checkerboard; a higher threshold with 4 passes eroded almost everything
 // away. FILL_CHANCE dropped from 0.45 to 0.30 after the outline pass (below) was added
@@ -34,7 +34,7 @@ const ITERATIONS = 2;
 
 // Mask-gated silhouettes (an earlier release's "found live" extension): a hand-authored tri-state
 // template per named shape, gating the SAME seed/smooth/color/mirror pipeline instead
-// of replacing it (06-active-language-phases.md's an earlier release research — every technique
+// of replacing it (the design notes an earlier release research — every technique
 // that produces a recognizable shape encodes its structure by hand somewhere; this is
 // the cheapest version of "somewhere"). One row = one string, one character per
 // half-column, read edge-to-center (examples/lib/pixelart.qbsk's `mirror()` maps
@@ -42,7 +42,7 @@ const ITERATIONS = 2;
 // '0' never, '1' maybe (real noise/CA texture), '2' always.
 //
 // The sword mask below has ZERO '1's, unlike its first version — found by comparing
-// against Dwarf Fortress's own item_weapons.png (06-active-language-phases.md's Phase
+// against Dwarf Fortress's own item_weapons.png (the design notes Phase
 // 32 entry): real weapon sprites are precise, deliberate line art with no internal
 // noise; noise/texture belongs on MATERIALS (stone, wood grain), not on a discrete
 // object's silhouette. Every cell that used to be "maybe" is now a definite choice.
@@ -174,7 +174,7 @@ const SILHOUETTES: Record<
 
 
   // Resources/vegetation (owner request, 2026-08-09: prompts for a set of map assets —
-  // 06-active-language-phases.md's an earlier release entry has the full list). Discrete objects
+  // the design notes has the full list). Discrete objects
   // get a SILHOUETTES mask like the creatures above; ironOre and farmland are texture
   // fills instead (TERRAIN below), since the prompts describe them as filling the whole
   // tile ("rock wall with metallic flecks", "tilled soil rows"), not a bounded object.

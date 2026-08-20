@@ -1,5 +1,5 @@
-// an earlier release extension (owner request, 2026-08-09) — batch-generates the full set of
-// terrain/structure/resource/creature assets the author asked for prompts on, using
+// An earlier release extension (owner request, 2026-08-09) — batch-generates the full set of
+// terrain/structure/resource/creature assets the owner asked for prompts on, using
 // src/tools/spriteGen.ts's generateSpriteAssets (SILHOUETTES) and generateTerrainAssets
 // (TERRAIN) — no new generation logic here, just fixed seeds and output paths under
 // examples/res/assets/generated/, per that folder's README.

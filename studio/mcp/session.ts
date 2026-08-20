@@ -646,7 +646,7 @@ export class McpSessionHost implements McpHost {
     return { ok: true, path: resolved, bytes: source.length };
   }
 
-  // an earlier release: procedurally generate a pixel-art sprite (examples/lib/pixelart.qbsk,
+  // An earlier release: procedurally generate a pixel-art sprite (examples/lib/pixelart.qbsk,
   // via src/tools/spriteGen.ts — the same core bench/sprite-gen.mjs calls). The last
   // stage of that phase's design, built only after the pipeline was proven working via
   // the CLI script. Writes to a seed/size/shape-specific path under

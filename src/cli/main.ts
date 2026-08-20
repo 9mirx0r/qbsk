@@ -27,7 +27,7 @@ import {
 import { checkLayout } from "../tools/layout.js";
 import { parseArgs, type CliArgs } from "./args.js";
 
-const VERSION = "0.1.0";
+const VERSION = "1.0.0";
 
 const USAGE = `QBSK ${VERSION} — programming language and ASCII engine
 
@@ -590,7 +590,7 @@ export function main(argv: string[]): void {
       runRepl();
       return;
     default:
-      console.error(`qbsk ${args.command}: not implemented yet (not yet built)`);
+      console.error(`qbsk ${args.command}: not implemented yet`);
       process.exit(1);
   }
 }

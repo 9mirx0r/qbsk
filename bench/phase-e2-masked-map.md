@@ -1,4 +1,4 @@
-# an earlier release — the masked-map fast path
+# An earlier release — the masked-map fast path
 
 Measured on August 18, 2026, on the same Windows 11 machine and in one session. The
 before build is commit `021090d` (the E2 spec, before any implementation) in a detached

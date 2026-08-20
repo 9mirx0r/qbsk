@@ -1,6 +1,6 @@
 {
   "name": "qbsk",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "QBSK programming language + ASCII scene engine",
   "private": true,
   "author": "Quebratsk",
@@ -16,7 +16,7 @@
     "node": ">=24"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json && npm --prefix studio run build",
+    "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit && tsc --noEmit -p studio/tsconfig.json",
     "test": "vitest run",
     "lint": "eslint src tests studio",
@@ -25,9 +25,7 @@
     "play": "node dist/cli/main.js run --ansi --loop game/arena.qbsk --fps 60",
     "play:build": "npm run build && node dist/cli/main.js run --ansi --loop game/arena.qbsk --fps 60",
     "studio": "npm --prefix studio run build && npm --prefix studio start",
-    "doctor": "node tools/doctor.mjs",
-    "build:lang": "tsc -p tsconfig.build.json",
-    "postinstall": "npm --prefix studio install"
+    "doctor": "node tools/doctor.mjs"
   },
   "license": "UNLICENSED",
   "devDependencies": {

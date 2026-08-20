@@ -5,7 +5,7 @@
 // this and nothing else.
 //
 // NO MATRIX LIBRARY, DELIBERATELY. The research this era draws on prescribed a
-// Vec3/Mat4 core first (see 08-ascii-3d-research-review.md). Matrices earn their
+// Vec3/Mat4 core first (see the design notes). Matrices earn their
 // keep when thousands of vertices share one cached transform — that is a
 // rasterizer's problem, and there is no rasterizer yet. Doing the same arithmetic
 // directly is shorter, has fewer places to be wrong, and is exactly as correct.

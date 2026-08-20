@@ -402,7 +402,7 @@ TypeScript now; keep each chrome component small and isolated enough to swap.
 > code existed. Every MCP tool and resource below is part of the contract; an
 > implementation may add tools/resources but not remove or change these shapes.
 >
-> Two rules in `06-active-language-phases.md` §an earlier release are non-negotiable and are
+> Two rules in `the design notes` §an earlier release are non-negotiable and are
 > restated here so a future contributor cannot undo them by accident:
 >
 > **The two-layer documentation rule.** An AI reads *every tool description on every
@@ -1240,7 +1240,7 @@ reports one error at a time by design.
 ### 19.1 The problem
 
 The Inspector pane shipped with the first version of the Studio, and its contents were the
-sentence **"Populated in Phase 12 (qbsk_inspect)."** — a promise, in the window, where a
+a sentence promising it would be filled in by a later milestone — a promise, in the window, where a
 feature should be. Anti-pattern 1 in its purest form: it renders, it costs a pane of screen
 space, and it does nothing.
 

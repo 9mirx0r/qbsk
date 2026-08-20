@@ -1,6 +1,6 @@
 // an earlier release — procedural pixel-art generation (the roadmap).
 // Exercises examples/lib/pixelart.qbsk in isolation via `use` + runQbsk, the same style
-// as an earlier release's action_rules tests and an earlier release's population tests. Only `generate()` is
+// as an earlier release's action_rules tests and that release's population tests. Only `generate()` is
 // exported (module-private helpers aren't reachable from outside), so every test drives
 // the full seed -> smooth -> color -> mirror pipeline through it.
 import { describe, expect, it } from "vitest";
@@ -18,7 +18,7 @@ function out(source: string): string[] {
   return r.out;
 }
 
-describe("an earlier release: pixelart.qbsk", () => {
+describe("pixelart.qbsk", () => {
   it("fillChance 0.0 produces an entirely empty sprite, any rolls", () => {
     // No cell can seed as filled (a [0,1) roll is never < 0.0), so no neighbor is ever
     // filled either — the smoothing pass has nothing to spread, at any threshold.
@@ -105,13 +105,13 @@ print(pixels)
 
 });
 
-// an earlier release (mask-gated generation) — generateMasked() adds a tri-state silhouette mask
+// An earlier release (mask-gated generation) — generateMasked() adds a tri-state silhouette mask
 // (0=never, 1=maybe, 2=always) on top of the exact same seed->smooth->color->mirror
 // pipeline generate() already uses. Found live: a pure symmetric blob has no way to
 // target a recognizable shape (a sword, an axe) — every technique that DOES produce one
-// encodes its structure by hand somewhere (06-active-language-phases.md's an earlier release
+// encodes its structure by hand somewhere (the design notes an earlier release
 // research). This is that: the cheapest version of "somewhere."
-describe("an earlier release: pixelart.qbsk generateMasked()", () => {
+describe("pixelart.qbsk generateMasked", () => {
   it("an all-never mask forces every pixel empty, regardless of rolls or fillChance", () => {
     expect(
       out(`
@@ -200,12 +200,12 @@ print(pixels)
   });
 });
 
-// an earlier release (outline pass) — found by comparing against real reference sprites
-// (Dwarf Fortress's own item/creature graphics, 06-active-language-phases.md's Phase
+// An earlier release (outline pass) — found by comparing against real reference sprites
+// (Dwarf Fortress's own item/creature graphics, the design notes Phase
 // 32 entry): a filled silhouette with no border reads as "raw fill," not as an
 // intentional object — everything in the reference material has an outline. This adds
 // exactly that, as a pass over the already-colored grid.
-describe("an earlier release: pixelart.qbsk applyOutline (via generateMasked's outlineIndex)", () => {
+describe("pixelart.qbsk applyOutline (via generateMasked's outlineIndex)", () => {
   it("an outlineIndex of 0 is a real no-op — byte-identical to before this feature existed", () => {
     // mask=[2, 0]: cell 0 always filled, cell 1 always empty, deterministically.
     expect(

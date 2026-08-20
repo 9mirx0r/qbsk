@@ -40,7 +40,7 @@ const TOOLS: McpTool[] = [
   {
     name: "qbsk_check",
     description:
-      "Validate QBSK source WITHOUT running it (an earlier release analyzer). Read `clean` (or `problems.length`) for the verdict — NOT `ok`, which only reports that the call ran and is true even when problems were found. Each problem carries a span, source fragment and a 'did you mean' hint. Use it before qbsk_eval to catch arity/typo/undefined-name mistakes.",
+      "Validate QBSK source WITHOUT running it (the analyzer). Read `clean` (or `problems.length`) for the verdict — NOT `ok`, which only reports that the call ran and is true even when problems were found. Each problem carries a span, source fragment and a 'did you mean' hint. Use it before qbsk_eval to catch arity/typo/undefined-name mistakes.",
     inputSchema: {
       type: "object",
       properties: {
@@ -207,7 +207,7 @@ const TOOLS: McpTool[] = [
   {
     name: "qbsk_generate_sprite",
     description:
-      "Procedurally generate a 16x16 or 32x32 pixel-art sprite, outlined (an earlier release). Same seed -> same sprite. Writes .qbdata + SVG under examples/res/generated/, returns the SVG inline. Omit `shape` for a free-form blob (untargeted). Pass shape:'sword' for a mask-gated, recognizable silhouette; an unknown shape is a structured error, never a silent blob fallback.",
+      "Procedurally generate a 16x16 or 32x32 pixel-art sprite, outlined. Same seed -> same sprite. Writes .qbdata + SVG under examples/res/generated/, returns the SVG inline. Omit `shape` for a free-form blob (untargeted). Pass shape:'sword' for a mask-gated, recognizable silhouette; an unknown shape is a structured error, never a silent blob fallback.",
     inputSchema: {
       type: "object",
       properties: {

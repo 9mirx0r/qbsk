@@ -1,6 +1,6 @@
 {
   "name": "qbsk-studio",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "QBSK Studio \u2014 the QBSK language and ASCII engine inside a window",
   "private": true,
   "author": "Quebratsk",

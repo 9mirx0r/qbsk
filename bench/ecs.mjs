@@ -130,7 +130,7 @@ function ecsRadius(ecs, x, y, radius) {
 
 const COUNTS = [50, 200, 500, 1000, 2000];
 
-console.log("=== QBSK ECS Benchmark (an earlier design) ===\n");
+console.log("=== QBSK ECS Benchmark ===\n");
 
 for (const n of COUNTS) {
   console.log(`\n--- ${n} entities ---`);

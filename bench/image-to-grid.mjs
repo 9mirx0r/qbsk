@@ -6,7 +6,7 @@
 // Flags:
 //   --png <path>       the SOURCE render. Not ASCII art: converting a picture OF
 //                      glyphs samples across glyph boundaries and loses the structure
-//                      twice, measured during an earlier release spike.
+// twice, measured during an earlier release spike.
 //   --cols / --rows    the grid. A 1:2 cell means a 3:2 image maps without distortion.
 //   --normalise        stretch the image's own range across the ramp
 //   --gamma <n>        bend the curve; below 1 lifts shadows

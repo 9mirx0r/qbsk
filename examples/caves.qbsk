@@ -1,6 +1,6 @@
 // caves.qbsk — L4: seeded randomness + bitwise (docs/language.md §6.4, §6.5)
 // A cave generated IN QBSK, deterministically: same seed, same cave, every run —
-// the thing Phase 27's worldgen had to do with host-side generator scripts because
+// the thing an earlier release's worldgen had to do with host-side generator scripts because
 // the language had no bitwise and no seeded RNG. Now it is a page of QBSK.
 //
 // Cellular-automata cave (the roguelike classic): seed random walls, then two

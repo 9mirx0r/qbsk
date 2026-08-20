@@ -216,7 +216,7 @@ describe("lambdas: func(params) expr (docs/language.md §6.3)", () => {
 // Analyzer regression: a layer drawing from a `for` body keeps its directives live
 // ---------------------------------------------------------------------------
 
-describe("a 'color:' above a for loop that draws is NOT dead (an earlier release scan)", () => {
+describe("a 'color:' above a for loop that draws is NOT dead", () => {
   it("for bodies count as drawing, like while bodies", () => {
     const source = [
       `scene S(width: 10, height: 5)`,

@@ -1,4 +1,4 @@
-// The v0.1 surface is frozen (docs/language.md §17).
+// The 1.0 surface is frozen (docs/language.md §17).
 //
 // Eight commits in the hardening cycle carried BREAKING CHANGE, and that was correct —
 // a language that silently ignored named arguments and let modules read the entry
@@ -193,10 +193,15 @@ describe("the frozen CLI surface (§17.1)", () => {
 });
 
 describe("the version claim (§17)", () => {
-  it("package.json and the spec agree on 0.1", () => {
+  it("package.json, the CLI and the spec agree on the version", () => {
     const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"));
-    expect(pkg.version).toMatch(/^0\.1\./);
+    expect(pkg.version).toMatch(/^1\.0\./);
+    // The CLI carried its own copy and they disagreed the moment one was bumped, which
+    // is what `packaging.test.ts` caught. Asserted here too, beside the spec, so the
+    // three places that state a version are checked in one place.
+    const cli = readFileSync(join(ROOT, "src", "cli", "main.ts"), "utf8");
+    expect(cli).toContain(`const VERSION = "${pkg.version}"`);
     const spec = readFileSync(join(ROOT, "docs", "language.md"), "utf8");
-    expect(spec).toContain("## 17. v0.1 — what is frozen");
+    expect(spec).toContain("## 17. 1.0 — what is frozen");
   });
 });

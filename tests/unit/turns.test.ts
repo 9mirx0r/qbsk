@@ -432,7 +432,7 @@ describe("examples/turns.qbsk — the world moves when you do", () => {
 // hp, and filed the verbosity as a missing feature. So the corrected claim gets a test:
 // if in-place entity mutation ever stops working, this fails, and if it keeps working,
 // no document may claim otherwise.
-describe("entities can be mutated in place (docs/engine.md §12.2, an earlier release)", () => {
+describe("entities can be mutated in place (docs/engine.md §12.2)", () => {
   it("an entity's component is assignable through the list", () => {
     const out = printed(
       [

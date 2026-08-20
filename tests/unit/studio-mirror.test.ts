@@ -1,4 +1,4 @@
-// an earlier release — the session mirror (docs/studio.md §12). Headless: the journal is a
+// An earlier release — the session mirror (docs/studio.md §12). Headless: the journal is a
 // file, so none of this needs a window.
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import { mkdtempSync, rmSync, existsSync, readFileSync, appendFileSync } from "node:fs";

@@ -1,6 +1,6 @@
 # Fonts bundled with QBSK
 
-QBSK itself is MIT licensed (see the repository `LICENSE`). The font in this folder is
+QBSK itself is proprietary (see the repository `LICENSE`). The font in this folder is
 **not** ours and is **not** covered by that license. It is redistributed under its own
 terms, which are recorded here because the OFL requires the license to travel with the
 font.

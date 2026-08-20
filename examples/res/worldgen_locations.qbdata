@@ -1,9 +1,9 @@
-// worldgen_locations.qbdata — Phase 27 (structure) + Phase 28 (generated `name`,
+// worldgen_locations.qbdata — an earlier release (structure) + that release (generated `name`,
 // bench/worldgen-names-gen.mjs). `key` stays the internal identifier; `name` is
 // the phoneme-generated display name — regenerate: node bench/worldgen-names-gen.mjs 27
 //
 // A real terrain-field pipeline and a CDDA-style placement engine are both out of
-// scope (see Phase 27's scope exclusions) — positions here are still hand-placed.
+// scope (see an earlier release's scope exclusions) — positions here are still hand-placed.
 
 shape location
     key: str

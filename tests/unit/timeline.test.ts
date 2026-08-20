@@ -1,4 +1,4 @@
-// an earlier release — timelines (docs/engine.md §11.5).
+// An earlier release — timelines (docs/engine.md §11.5).
 import { describe, expect, it } from "vitest";
 import {
   activeAt,

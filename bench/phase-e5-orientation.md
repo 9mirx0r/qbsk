@@ -1,4 +1,4 @@
-# an earlier release — orientation glyphs
+# An earlier release — orientation glyphs
 
 Measured on August 18, 2026. Like E3, this stage is judged by pictures and by
 boundaries, not by milliseconds: it changes which character a line draws, not how often
@@ -59,7 +59,7 @@ is one of the four.
 ## Criterion 5 — spec before code, docs-truth green
 
 §11.16 was written before `src/engine/stroke.ts` existed. `stroke_glyph` joins the frozen
-surface deliberately: 79 → 80 in `v01-surface.test.ts` and `docs/language.md` §17.1.
+surface deliberately: 79 → 80 in `surface.test.ts` and `docs/language.md` §17.1.
 
 ## Deliberately left out
 

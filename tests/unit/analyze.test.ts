@@ -202,7 +202,7 @@ describe("analyze: DSL positions", () => {
   });
 });
 
-describe("analyze: state directives that never reach a primitive are dead (an earlier release)", () => {
+describe("analyze: state directives that never reach a primitive are dead", () => {
   it("a visible: at the end of a layer reaches nothing", () => {
     const src = [
       "var show = false",

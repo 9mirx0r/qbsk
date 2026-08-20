@@ -20,7 +20,7 @@ function out(source: string): string[] {
 const TABLE =
   'var table = {"entries": [{"value": "guard", "weight": 50}, {"value": "merchant", "weight": 35}, {"value": "hermit", "weight": 15}]}';
 
-describe("an earlier release: population.qbsk", () => {
+describe("population.qbsk", () => {
   it("a roll near 0 lands in the first (heaviest) bucket", () => {
     expect(
       out(`

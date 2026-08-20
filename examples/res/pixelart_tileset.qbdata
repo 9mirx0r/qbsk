@@ -1,6 +1,6 @@
 // pixelart_tileset.qbdata — maps glyphs to PROCEDURALLY GENERATED SVGs
-// (bench/sprite-gen.mjs, examples/lib/pixelart.qbsk — Phase 32), not hand-drawn ones.
-// Same shape as examples/res/tiles.qbdata (Phase 24) — this reuses that renderer
+// (bench/sprite-gen.mjs, examples/lib/pixelart.qbsk — an earlier release), not hand-drawn ones.
+// Same shape as examples/res/tiles.qbdata (an earlier release) — this reuses that renderer
 // unchanged; the only thing new is where the images came from.
 //
 // "c" (creature) is the free-form symmetric blob generate() produces — no target
@@ -10,7 +10,7 @@
 // be, generation only decides texture within it. orc/demon share the exact same
 // silhouette (src/tools/spriteGen.ts's HUMANOID_ROWS) and differ only by palette — a
 // player-character/enemy pair meant to occupy one tile each on the map, same as any
-// other creature would. All four sprites are outlined (Phase 32b), found necessary by
+// other creature would. All four sprites are outlined (an earlier release), found necessary by
 // comparing against Dwarf Fortress's own item/creature graphics: an un-outlined fill
 // reads as raw noise, not as an intentional object.
 //

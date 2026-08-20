@@ -1,4 +1,4 @@
-// an earlier release — the procedural-RPG test scene (criterion 4: byte-exact determinism).
+// An earlier release — the procedural-RPG test scene (criterion 4: byte-exact determinism).
 // the roadmap, the roadmap §1.
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
@@ -30,7 +30,7 @@ const play = (): string => {
   return text;
 };
 
-describe("an earlier release determinism (14-dwarf-fortress-worldgen-research.md §5's seed model)", () => {
+describe("an earlier release determinism (the design notes §5's seed model)", () => {
   it("two independent runs from the same source produce byte-identical frames", () => {
     // No root seed is threaded through QBSK here (bench/worldgen-gen.mjs already
     // rolled the NPCs' personalities host-side, deterministically, into static

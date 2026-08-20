@@ -1,4 +1,4 @@
-// tiles.qbsk — Phase 24 (C1): a tileset-ready scene (docs/engine.md §15).
+// tiles.qbsk — an earlier release (C1): a tileset-ready scene (docs/engine.md §15).
 //
 // The scene is drawn with plain characters. A tileset maps those characters to
 // images: in QBSK Studio open Engine settings and pick examples/res/tiles.qbdata,

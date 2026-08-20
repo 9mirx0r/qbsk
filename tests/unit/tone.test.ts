@@ -1,4 +1,4 @@
-// an earlier release — sound, from scratch and with no dependencies (docs/audio.md).
+// An earlier release — sound, from scratch and with no dependencies (docs/audio.md).
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import {

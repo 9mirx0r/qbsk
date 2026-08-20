@@ -1,4 +1,4 @@
-// an earlier release — play mode sizing (docs/studio.md §13.3).
+// An earlier release — play mode sizing (docs/studio.md §13.3).
 //
 // Only the arithmetic is tested here, and that is deliberate: hiding chrome is
 // structural CSS, but a bad fit either clips the scene or wastes half the window.

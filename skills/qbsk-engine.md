@@ -304,8 +304,8 @@ The behaviour below lives in `src/cli/main.ts`.
 - `coord.ts`: world↔local conversion. By default primitives use layer-relative coords;
   `world: (x, y)` forces global.
 - Anchors (`anchor: center | top-left | ... | (fx, fy)`) = translation and scale pivot.
-- v0.1 transformations: **translate** and **scale** (character repetition).
-  Rotation is NOT in v0.1: document as future, do not implement halfway.
+- 1.0 transformations: **translate** and **scale** (character repetition).
+  Rotation is NOT in 1.0: document as future, do not implement halfway.
 - **DoD**: an object anchored at center moves without jumps; world↔local conversion tests.
 
 ## 11. ANIMATION — technical checklist

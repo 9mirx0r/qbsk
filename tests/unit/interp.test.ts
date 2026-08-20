@@ -686,10 +686,10 @@ describe("eval: list and dict literals (L1.5)", () => {
 
 // This used to assert that `l[0] = 9` was an ERROR ("read-only in L1.5"), pinning a
 // limitation as though it were a rule — the same shape as the string-indexing test
-// above. an earlier release closed the gap docs/language.md §5.1 always called "for now": index
+// above. An earlier release closed the gap docs/language.md §5.1 always called "for now": index
 // assignment fills the specific hole natives (push/pop/keys) never covered — replacing
 // one list element, or adding/overwriting one dict key, without rebuilding the value.
-describe("eval: index assignment (an earlier release)", () => {
+describe("eval: index assignment", () => {
   it("list[i] = v replaces one element in place", () => {
     expect(out("var l = [1, 2, 3]\nl[1] = 99\nprint(l)")).toEqual(["[1, 99, 3]"]);
   });
@@ -995,11 +995,11 @@ describe("eval: functions and closures", () => {
   });
 });
 
-// an earlier release: found writing examples/lib/action_rules.qbsk's own tests — list/dict
+// An earlier release: found writing examples/lib/action_rules.qbsk's own tests — list/dict
 // literals tolerated multi-line layout with a trailing comma (L1.5), a call's argument
 // list silently didn't. `skipNewlineIndents()` (already used by ListLit/DictLit parsing)
 // now runs the same way inside a call's `( )`.
-describe("eval: multi-line call arguments (an earlier release)", () => {
+describe("eval: multi-line call arguments", () => {
   it("a call's arguments can span multiple lines with a trailing comma", () => {
     const src = [
       "func add(a, b)",
@@ -1218,7 +1218,7 @@ describe("eval: declarative scene DSL", () => {
     expect(r.out[9]).toBe("########################");
   });
 
-  // an earlier release: the sprites behind the "c" (free-form blob), "s" (masked sword), "o"
+  // An earlier release: the sprites behind the "c" (free-form blob), "s" (masked sword), "o"
   // (masked orc) and "e" (masked demon) glyphs are procedurally generated
   // (bench/sprite-gen.mjs + examples/lib/pixelart.qbsk), not hand-drawn — but exactly
   // like tiles.qbsk above, the character-grid golden is unaffected by tiles at all

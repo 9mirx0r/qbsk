@@ -356,7 +356,7 @@ layer menu z: 0
     put "▲/▼ Navigate    ENTER Select    ESC Back" at (20, 21)
 
     color fg: bright-black
-    put "QBSK 0.1.0  |  Realms of Eternity v0.1" at (2, 23)
+    put "QBSK 1.0.0  |  Realms of Eternity v1.0" at (2, 23)
 
 layer controls z: 2
     visible: screen == "menu"

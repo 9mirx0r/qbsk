@@ -1,4 +1,4 @@
-// an earlier release — src/tools/pngDecode.ts, a from-scratch PNG decoder (host-side only; see
+// An earlier release — src/tools/pngDecode.ts, a from-scratch PNG decoder (host-side only; see
 // that file's own header for why). Tested against PNGs built here from raw bytes using
 // only Node's built-in zlib — never against a file from a PNG-writing library, so a
 // passing test proves the decoder itself is correct, not that it round-trips its own
@@ -47,7 +47,7 @@ function buildPng(width: number, height: number, colorType: number, rows: number
   return Buffer.concat([SIGNATURE, ihdr(width, height, colorType), idat, chunk("IEND", Buffer.alloc(0))]);
 }
 
-describe("an earlier release: decodePng", () => {
+describe("decodePng", () => {
   it("rejects a buffer that isn't a PNG at all", () => {
     expect(() => decodePng(Buffer.from("not a png"))).toThrow(/bad signature/);
   });

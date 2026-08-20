@@ -3,7 +3,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-// an earlier release, criterion 4: the one-way dependency arrow of docs/studio.md §2.
+// An earlier release, criterion 4: the one-way dependency arrow of docs/studio.md §2.
 // `src/` must never import Electron and must never import from `studio/`.
 // The rule is worthless if nothing checks it — this test is the check.
 

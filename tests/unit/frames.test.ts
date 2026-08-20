@@ -1,4 +1,4 @@
-// an earlier release — frame-swapping (docs/engine.md §11.4).
+// An earlier release — frame-swapping (docs/engine.md §11.4).
 import { describe, expect, it } from "vitest";
 import { pickFrame } from "../../src/choreo/frames.js";
 import { parse } from "../../src/parser/parser.js";

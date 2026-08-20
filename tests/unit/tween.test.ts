@@ -1,4 +1,4 @@
-// an earlier release — tweens and easings (docs/engine.md §11).
+// An earlier release — tweens and easings (docs/engine.md §11).
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { ease, EASING_NAMES, isEasingName } from "../../src/choreo/easing.js";

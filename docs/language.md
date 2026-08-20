@@ -1,6 +1,6 @@
 # QBSK — Language Spec (docs/language.md)
 
-> **Status:** v0.1 — this document is the specification. Any syntax change is made here
+> **Status:** 1.0 — this document is the specification. Any syntax change is made here
 > corrected architecture decisions. Any syntax change is made in THIS document before
 > touching the code ("Spec before code" principle).
 
@@ -430,7 +430,7 @@ anonymous lambda (L2, §6.3): `map(l, func(n) n * 2)`.
   because no callee (function or native) accepts them yet. Only the scene DSL
   (`docs/engine.md`) accepts named arguments. Supporting named arguments for natives
   is a real gap, deliberately deferred; see `docs/engine.md` §13.2.
-- **Call argument lists span multiple lines (an earlier release):** `f(\n    a,\n    b,\n)` parses
+- **Call argument lists span multiple lines (an earlier release):** `f(\n a,\n b,\n)` parses
   the same as `f(a, b)` — the same implicit continuation §5.1 gives `[ ]`/`{ }` literals
   now applies to a call's `( )` too, trailing comma included. Before an earlier release this was a
   real asymmetry (found writing `examples/lib/action_rules.qbsk`'s tests, an earlier release): list
@@ -572,7 +572,7 @@ The generator is **mulberry32 — the exact one the host already uses** for audi
 and particles (`src/util/random.ts`): one PRNG in the whole project, one set of golden
 expectations, zero drift. The same seed yields the same sequence on every platform,
 which is what makes worldgen writable IN QBSK and testable byte-for-byte — the gap
-an earlier release had to route around with host-side generator scripts (worldgen_test.qbsk's
+An earlier release had to route around with host-side generator scripts (worldgen_test.qbsk's
 header names it).
 
 - The generator is a mutable value by design — like a list, it advances when rolled.
@@ -1275,7 +1275,7 @@ bestiary.qbdata:9:1 — 'WISP' is missing 'hp'; did you mean 'hp' instead of 'hp
 **Ordinary QBSK values** — dicts, lists, strings, numbers. Not a new type.
 
 That is deliberate: `spawn`, `find`, `without`, the console's `entities` table and every
-list native already work on them, with nothing to keep in step. an earlier release measured dicts at
+list native already work on them, with nothing to keep in step. An earlier release measured dicts at
 2000 entities per turn in under 5 ms, so there is no performance argument for a special
 representation either.
 
@@ -2649,7 +2649,7 @@ written in a second place is not documentation, it is a copy waiting to drift.
 
 ---
 
-## 17. v0.1 — what is frozen, and what that promises (L14)
+## 17. 1.0 — what is frozen, and what that promises (L14)
 
 Eight commits in this cycle carry `BREAKING CHANGE`. That was correct while the ghosts
 were being removed — a language that silently ignored a named argument, dropped a
@@ -2663,7 +2663,7 @@ version bump.** Everything below is either frozen, explicitly not frozen, or nam
 known gap — and the third list matters as much as the first two, because a freeze that
 hides its own soft spots is worse than no freeze.
 
-### 17.1 What v0.1 freezes
+### 17.1 What 1.0 freezes
 
 Within `0.x`, none of the following changes in a way that breaks a program that runs today:
 
@@ -2703,7 +2703,7 @@ Naming these is the honest half of the exercise:
 
 ### 17.3 Known gaps, stated rather than hidden
 
-A freeze is only worth something if it admits what is soft. These are the things a v0.1
+A freeze is only worth something if it admits what is soft. These are the things a 1.0
 user can hit, all of them documented and none of them scheduled:
 
 - **Integers past 2^53 lose precision silently** (§5.0). Inherited from IEEE-754 doubles;

@@ -1,6 +1,6 @@
 // Tweens (docs/engine.md §11).
 //
-// The design question the external review flagged (04-claude-review.md §5 answer 1)
+// The design question the external review flagged (the design notes §5 answer 1)
 // was: where does "when did this animation start" live? Answer: HOST-SIDE, next to
 // gameTime — never inside the interpreter.
 //

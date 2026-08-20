@@ -1,4 +1,4 @@
-# an earlier release — subcell resolution
+# An earlier release — subcell resolution
 
 Measured on August 18, 2026, on the same Windows 11 machine and in one session.
 
@@ -55,7 +55,7 @@ both would still fail.
 - **2** — two subpixels of different colours in one cell produce `▀` with fg = top and
   bg = bottom, tested in the pure module and again end to end through the native.
 - **5** — `plot` and `braille` are registered, specced in `docs/engine.md` §11.14, joined
-  to the frozen surface deliberately (77 → 79 in `v01-surface.test.ts` and
+  to the frozen surface deliberately (77 → 79 in `surface.test.ts` and
   `docs/language.md` §17.1), and `docs-truth.test.ts` is green.
 
 ## Deliberately left out

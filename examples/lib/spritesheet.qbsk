@@ -1,16 +1,16 @@
-// spritesheet.qbsk — Phase 32d: crops a decoded sprite sheet into individual cells.
+// spritesheet.qbsk — an earlier release: crops a decoded sprite sheet into individual cells.
 //
 // Genuinely QBSK's own: pure index arithmetic, no bitwise operators needed anywhere,
 // unlike the PNG decoding that produces `pixels` in the first place — that part stays
 // host-side (src/tools/pngDecode.ts's own header explains why: DEFLATE is a bit-level
-// format QBSK cannot decode, the same gap Phase 27 named for a seeded RNG). Once a
+// format QBSK cannot decode, the same gap an earlier release named for a seeded RNG). Once a
 // sheet is already a flat, palette-indexed pixel list — exactly
 // examples/lib/pixelart.qbsk's own convention, 0 = empty/transparent, k = palette[k-1]
 // — slicing it into a grid of equal-sized cells needs nothing QBSK doesn't already
 // have.
 //
-// Built for the owner's own AI-generated reference sheets (06-active-language-phases.md's
-// Phase 32 entry): comparing QBSK's procedural output against them needs the sheet cut
+// Built for the owner's own AI-generated reference sheets (the design notes
+// An earlier release entry): comparing QBSK's procedural output against them needs the sheet cut
 // into individual sprites first.
 
 func idx(x, y, w)

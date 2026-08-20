@@ -1,6 +1,6 @@
 # QBSK — entity workload
 
-an earlier release criterion 1: **measure before designing.** The question was whether an entity
+An earlier release criterion 1: **measure before designing.** The question was whether an entity
 system can live in QBSK, or whether it has to be TypeScript exposed as natives. The two
 are hard to swap later, so the answer had to be a number.
 

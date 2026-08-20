@@ -8,7 +8,7 @@ import { McpServer, type McpTool } from "../../studio/mcp/server.js";
 import { buildResources, LIMIT_ROWS } from "../../studio/mcp/generate-manual.js";
 import type { InspectResult, KeyResult, LoadResult, McpHost, ToolError } from "../../studio/mcp/types.js";
 
-// an earlier release (docs/studio.md §11): the embedded MCP surface, headless. The same
+// An earlier release (docs/studio.md §11): the embedded MCP surface, headless. The same
 // McpSessionHost/McpServer classes run inside the Electron main process; here they
 // are driven directly and over the raw JSON-RPC wire, with no window and no agent
 // copying anything between windows.
@@ -131,7 +131,7 @@ describe("MCP session host: qbsk_check (docs/studio.md §11.4)", () => {
   // told real, working source was broken.
   //
   // This is the SECOND time this bug shipped: loadProgram() carries an earlier release comment
-  // fixing exactly this, and check() was left behind. an earlier release missed it for the stated
+  // fixing exactly this, and check() was left behind. An earlier release missed it for the stated
   // reason that no test scene loaded an external resource — so this test uses a real
   // example that does, which is the only kind that can catch it.
   it("a real example's `use` resolves relative to the file, not the project root", () => {
@@ -375,10 +375,10 @@ describe("MCP session host: qbsk_open / qbsk_save with path containment (docs/st
   });
 });
 
-// an earlier release: generateSprite() writes real files, so — same convention as qbsk_save
+// An earlier release: generateSprite() writes real files, so — same convention as qbsk_save
 // above — it runs against a temp root, never the real repo, with examples/lib/
 // copied in (that's the only thing generateSpriteAssets actually reads from disk).
-describe("MCP session host: qbsk_generate_sprite (an earlier release)", () => {
+describe("MCP session host: qbsk_generate_sprite", () => {
   function rootWithPixelart(): string {
     const dir = tempRoot();
     const libDir = join(dir, "examples", "lib");
@@ -563,7 +563,7 @@ describe("MCP server: JSON-RPC 2.0 over the wire (docs/studio.md §11.2/§11.3)"
       "qbsk_open",
       "qbsk_save",
       "qbsk_loop",
-      // an earlier release (docs/studio.md §16), same reasoning, two more decisions on the record.
+      // An earlier release (docs/studio.md §16), same reasoning, two more decisions on the record.
       // `qbsk_key`: the surface could load, inspect and read a game and never press a
       // key — pressKey existed for the CLI and the window and was never wired here, so
       // the one program that proves QBSK makes games could not be played by the agent
@@ -577,7 +577,7 @@ describe("MCP server: JSON-RPC 2.0 over the wire (docs/studio.md §11.2/§11.3)"
       // the agent to arrive where it started — and eval's meaning depended on whether a
       // program was already live, so "run this file" was conditional on session state.
       "qbsk_load",
-      // an earlier release: an agent can generate a real asset (pixel-art sprite), not just read
+      // An earlier release: an agent can generate a real asset (pixel-art sprite), not just read
       // or run QBSK code — also locked on purpose, same reasoning as qbsk_read_window.
       "qbsk_generate_sprite",
     ]);
@@ -823,7 +823,7 @@ describe("MCP session host: project-relative resource paths", () => {
   });
 });
 
-// an earlier release: the manual generator EXECUTES example snippets, and examples now declare
+// An earlier release: the manual generator EXECUTES example snippets, and examples now declare
 // tones. Two things must stay true, and neither is guaranteed by the code being
 // correct today — only by nothing later wiring a device into the generator.
 describe("generating the manual is deterministic and silent (docs/audio.md §3)", () => {
@@ -856,7 +856,7 @@ describe("generating the manual is deterministic and silent (docs/audio.md §3)"
   });
 });
 
-// an earlier release (docs/studio.md §16): the agent can press keys and read why things happened.
+// An earlier release (docs/studio.md §16): the agent can press keys and read why things happened.
 // examples/turns.qbsk is the program these exist for — its whole design is that nothing
 // moves until someone acts, so an agent that cannot press a key cannot play it at all.
 describe("MCP session host: qbsk_key (docs/studio.md §16.2)", () => {
@@ -996,7 +996,7 @@ describe("MCP session host: qbsk_trace (docs/studio.md §16.3)", () => {
   });
 });
 
-// an earlier release (docs/studio.md §17): running a file took open + eval, which sent the whole
+// An earlier release (docs/studio.md §17): running a file took open + eval, which sent the whole
 // source through the agent to arrive where it started — and meant something different
 // depending on whether a program was already live.
 describe("MCP session host: qbsk_load (docs/studio.md §17)", () => {

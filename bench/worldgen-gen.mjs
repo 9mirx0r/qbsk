@@ -1,7 +1,7 @@
-// an earlier release — the procedural-RPG test scene (06-active-language-phases.md).
+// An earlier release — the procedural-RPG test scene (the design notes).
 //
 // Host-side world generator: rolls NPC personalities (DF-style facets/values,
-// 14-dwarf-fortress-worldgen-research.md §3) from the ONE seeded PRNG this project has
+// the design notes §3) from the ONE seeded PRNG this project has
 // (src/util/random.ts), and writes them out as a `.qbdata` file the scene loads.
 //
 // WHY HOST-SIDE, NOT A NEW QBSK NATIVE: QBSK has no bitwise operators (checked: the
@@ -14,7 +14,7 @@
 //
 // Run: node bench/worldgen-gen.mjs [seed]
 // Same seed -> byte-identical output, every time (this is the determinism proof for
-// an earlier release criterion 4 — re-run this and diff the output).
+// An earlier release criterion 4 — re-run this and diff the output).
 
 import { mulberry32, streamSeed } from "../dist/util/random.js";
 import { writeFileSync } from "node:fs";
@@ -22,14 +22,14 @@ import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const seed = Number(process.argv[2] ?? 27); // default seed: 27, for an earlier release
+const seed = Number(process.argv[2] ?? 27); // default seed: 27
 
-// Four independent sub-streams, DF's own pattern (14-...-research.md §5) — regenerating
+// Four independent sub-streams, DF's own pattern (the design notes §5) — regenerating
 // NPCs must never change locations or professions, and vice versa.
 const STREAM = { npc: 0, location: 1, profession: 2, history: 3 };
 
 const npcRng = mulberry32(streamSeed(seed, STREAM.npc));
-// an earlier release: this stream was declared in an earlier release but never actually drawn from —
+// An earlier release: this stream was declared in that release but never actually drawn from —
 // profession was round-robin, not rolled. Now it is: one float per NPC, consumed by
 // lib/population.qbsk's weightedPick() inside the scene itself, not here — the
 // selection ALGORITHM is QBSK code (testable, composable); only the raw entropy is
@@ -41,7 +41,7 @@ const VALUES = ["tradition", "cooperation", "honesty"];
 const LOCATIONS = ["ashford", "millbrook", "cairn_hollow"];
 const NPC_COUNT = 8;
 
-// DF weights toward the middle so extremes are rare and notable (14-...-research.md §3);
+// DF weights toward the middle so extremes are rare and notable (the design notes §3);
 // averaging two rolls approximates that without needing a real distribution function.
 function weightedRoll(rng, min, max) {
   const a = rng();
@@ -83,8 +83,8 @@ const lines = [
   "//",
   "// Facets (0-100, how the NPC acts) and values (-50..50, what it believes) follow the",
   "// Dwarf Fortress model (14-dwarf-fortress-worldgen-research.md §3). Names are",
-  "// placeholders — the phoneme name-generator is explicitly out of scope for an earlier release.",
-  "// profession_roll (an earlier release) is a raw [0,1) float, not a profession string — the",
+  "// placeholders — the phoneme name-generator is explicitly out of scope here.",
+  "// profession_roll is a raw [0,1) float, not a profession string — the",
   "// scene resolves it against res/worldgen_professions.qbdata's PROFESSION_TABLE via",
   "// lib/population.qbsk's weightedPick() at load time, not here.",
   "",

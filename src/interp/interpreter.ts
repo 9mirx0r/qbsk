@@ -174,10 +174,10 @@ export interface InterpOptions {
   cellAspect?: number;
   scriptArgs?: string[];
   runtime?: GameRuntime;
-  // an earlier release: called when an EventDecl is evaluated in the entry program (never in
+  // An earlier release: called when an EventDecl is evaluated in the entry program (never in
   // modules) — lets the persistent SceneProgram collect the handlers it dispatches.
   onEvent?: (decl: EventDecl) => void;
-  // an earlier release: print sink for `print` calls from the persistent top level and from
+  // An earlier release: print sink for `print` calls from the persistent top level and from
   // event handlers. Falls back to a no-op when unset.
   print?: (line: string) => void;
   // Studio MCP (docs/studio.md §11.4): when set, this becomes the interpreter's
@@ -971,7 +971,7 @@ export class Interpreter {
     }
   }
 
-  // an earlier release: evaluates a SceneDecl into a scene value (width/height params are
+  // An earlier release: evaluates a SceneDecl into a scene value (width/height params are
   // validated) without mutating `lastScene` or defining the name — recomposeScene
   // calls it per frame to rebuild the scene from the live environment.
   private evalSceneValue(stmt: SceneDecl): QValue {
@@ -1166,7 +1166,7 @@ export class Interpreter {
     return rows;
   }
 
-  // an earlier release: evaluates a LayerDecl into a layer value, applying inherited state
+  // An earlier release: evaluates a LayerDecl into a layer value, applying inherited state
   // (M15 directives: z/visible/color propagate to following primitives).
   private evalLayerValue(stmt: LayerDecl): QValue {
     const staticKey = this.staticLayerKeys.get(stmt);
@@ -1460,7 +1460,7 @@ export class Interpreter {
     };
   }
 
-  // an earlier release: runs an event handler body with its parameters bound in a fresh child
+  // An earlier release: runs an event handler body with its parameters bound in a fresh child
   // scope of the live top-level env, so assignments (`x += 1`) walk up and mutate
   // the persistent variable while locals stay scoped to the dispatch.
   dispatchEvent(decl: EventDecl, args: QValue[]): void {
@@ -1490,7 +1490,7 @@ export class Interpreter {
     return truthy(this.visitExpr(decl.guard));
   }
 
-  // an earlier release: rebuilds the scene from the live environment without re-running the
+  // An earlier release: rebuilds the scene from the live environment without re-running the
   // top level. Only the SceneDecl and top-level LayerDecls re-evaluate (spec
   // language.md §7.7: per frame the handlers run and the scene re-composes).
   recomposeScene(program: Program): QValue | null {

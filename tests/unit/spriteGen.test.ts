@@ -1,4 +1,4 @@
-// an earlier release — src/tools/spriteGen.ts, the shared core both bench/sprite-gen.mjs and
+// An earlier release — src/tools/spriteGen.ts, the shared core both bench/sprite-gen.mjs and
 // Studio's qbsk_generate_sprite MCP tool call into. Read-only against the real
 // examples/lib/pixelart.qbsk (generateSpriteAssets never writes a file itself — only
 // the caller does), so no temp directory is needed here.
@@ -11,7 +11,7 @@ import { loadQbdata } from "../../src/parser/qbdata.js";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const libDir = resolve(root, "examples/lib");
 
-describe("an earlier release: generateSpriteAssets", () => {
+describe("generateSpriteAssets", () => {
   it("same seed and size -> byte-identical qbdata and SVG text", () => {
     const a = generateSpriteAssets(42, 16, libDir, "SPRITE");
     const b = generateSpriteAssets(42, 16, libDir, "SPRITE");
@@ -68,12 +68,12 @@ describe("an earlier release: generateSpriteAssets", () => {
   });
 });
 
-// an earlier release (mask-gated generation) — found live: a name/seed alone can't tell you what
+// An earlier release (mask-gated generation) — found live: a name/seed alone can't tell you what
 // shape came out (the author asked for "an axe" and got an unrelated organic blob,
 // because the original generator has no way to target a silhouette at all). `shape`
 // selects a hand-authored SILHOUETTES entry; the rest of the pipeline (entropy,
 // smoothing, coloring, mirroring) is unchanged.
-describe("an earlier release: generateSpriteAssets with `shape`", () => {
+describe("generateSpriteAssets with `shape`", () => {
   it("an unknown shape name is a clear error, not silent fallback to the blob", () => {
     expect(() => generateSpriteAssets(1, 16, libDir, "SPRITE", "battleaxe")).toThrow(
       /unknown sprite shape 'battleaxe'/,
@@ -133,12 +133,12 @@ describe("an earlier release: generateSpriteAssets with `shape`", () => {
   });
 });
 
-// an earlier release (character sprites) — owner request, 2026-08-09: a player-character orc
+// An earlier release (character sprites) — owner request, 2026-08-09: a player-character orc
 // and an enemy demon, both meant to occupy one tile on the map. Both reuse the SAME
 // hand-authored humanoid silhouette (src/tools/spriteGen.ts's HUMANOID_ROWS) — a
 // "reskin one rig with a new palette" approach, the same one real character-variant
 // sprites use — differentiated only by color, not by a second silhouette each.
-describe("an earlier release: generateSpriteAssets with shape='orc'/'demon'", () => {
+describe("generateSpriteAssets with shape='orc'/'demon'", () => {
   it("orc and demon share the exact same silhouette (pixel shape), only colors differ", () => {
     const orc = generateSpriteAssets(27, 16, libDir, "ORC", "orc");
     const demon = generateSpriteAssets(27, 16, libDir, "DEMON", "demon");
@@ -192,7 +192,7 @@ describe("an earlier release: generateSpriteAssets with shape='orc'/'demon'", ()
 
 
 // Orientation glyphs from the offline pixel path (docs/engine.md §11.16, an earlier release).
-describe("an earlier release: edge orientation from a generated sprite", () => {
+describe("edge orientation from a generated sprite", () => {
   it("a known diagonal edge yields the glyph that runs ALONG it", () => {
     // Criterion 4 of the stage. Built rather than generated so the edge's direction is
     // known before it is measured: the gradient points across an edge, so this is the

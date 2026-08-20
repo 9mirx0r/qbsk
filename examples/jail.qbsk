@@ -1,15 +1,15 @@
 // jail.qbsk — a cell, a prisoner, a jailer, and a conversation.
 //
 // The showcase scene: it uses nearly everything the language and engine have.
-//   lists (Phase 1)              hold the dialogue script
-//   interpolation (Phase 2)      renders each line
-//   len (Phase 10)               walks the script
-//   persistent state (Phase 13)  carries the dialogue between frames
-//   tweens (Phase 16)            move both figures smoothly, with easing
-//   frame-swapping (Phase 17)    makes them WALK instead of slide
+// lists (an earlier release) hold the dialogue script
+// interpolation (an earlier release) renders each line
+// len (an earlier release) walks the script
+// persistent state (an earlier release) carries the dialogue between frames
+// tweens (an earlier release) move both figures smoothly, with easing
+// frame-swapping (an earlier release) makes them WALK instead of slide
 //
 // The two are independent and that is the point: the tween decides WHERE the
-// figure is, the sprite cycle decides what its legs are doing. Before Phase 17
+// figure is, the sprite cycle decides what its legs are doing. Before an earlier release
 // this scene slid a stick figure a whole cell per frame.
 //   qbsk run --ansi --loop examples/jail.qbsk --fps 20
 scene Jail(width: 78, height: 34)
@@ -26,7 +26,7 @@ var script = [
     ["", ""],
 ]
 
-// The dialogue is a TIMELINE, not a hand-rolled frame counter (Phase 17).
+// The dialogue is a TIMELINE, not a hand-rolled frame counter (an earlier release).
 // Each line is a named step; `timeline_active` says which one is speaking at a
 // given game time, and the modulo makes the conversation loop.
 const talk = timeline_sequence([

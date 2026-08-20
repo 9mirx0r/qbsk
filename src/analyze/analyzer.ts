@@ -956,7 +956,7 @@ export function analyzeProgram(program: Program, file: string, baseDir?: string)
     walkExpr(e);
   };
 
-  // an earlier release (spec language.md §7.1b/§7.5): `visible:`/`color:`/`z:` are STATE
+  // An earlier release (spec language.md §7.1b/§7.5): `visible:`/`color:`/`z:` are STATE
   // DIRECTIVES for the primitives that follow them in the same layer — never
   // layer-level guards. A directive written at the END of a layer, or overwritten
   // by a later directive of the same kind before any primitive, reaches nothing:

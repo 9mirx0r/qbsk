@@ -1,4 +1,4 @@
-// an earlier release — examples/lib/spritesheet.qbsk, cropping a decoded sprite sheet into
+// An earlier release — examples/lib/spritesheet.qbsk, cropping a decoded sprite sheet into
 // individual cells. Exercises it in isolation via `use` + runQbsk, the same style as
 // action_rules.qbsk/population.qbsk/pixelart.qbsk's own tests.
 import { describe, expect, it } from "vitest";
@@ -16,7 +16,7 @@ function out(source: string): string[] {
   return r.out;
 }
 
-describe("an earlier release: spritesheet.qbsk", () => {
+describe("spritesheet.qbsk", () => {
   it("crops the top-left cell (0, 0) out of a 4x4 sheet of 2x2 cells", () => {
     // Sheet, row-major, values are just their own index for a readable expectation:
     //  0  1 |  2  3

@@ -39,21 +39,21 @@ ms/frame — script: 0.885  compose: 0.001  diff: 0.015  emit: 0.020
 ## Reading
 
 1. **The interpreter is 96% of the per-frame cost** (0.885 of 0.921 ms). `diff` + `emit`
-   together are 0.035 ms — 3.8%. Confirms answer 3 of the review
+   together are 0.035 ms — 3.8%. Confirms answer 3 of the audit
    (`the roadmap` §5): if optimization is ever needed, it is the
    interpreter, not `render.ts`. **Do not touch the diffing heuristic** — that would be
    premature optimization on 3.8% of the budget.
 
-2. **The p99 of 32.0 fps is the number to watch.** The review measured p99 56.6 on a Linux
+2. **The p99 of 32.0 fps is the number to watch.** The audit measured p99 56.6 on a Linux
    sandbox; here, on Windows, it gives 32.0 with the same scene. The difference is
    environmental (Windows scheduler + OneDrive syncing the folder during the measurement),
-   not the code — the avg fps and the ms/frame match in shape what was reviewed. Even
+   not the code — the avg fps and the ms/frame match in shape what was audited. Even
    so, this is the honest value for Windows and it is the one to use as the local
    reference: if a future change lowers the p99 **in this same environment**, it is a
    real regression.
 
 3. **Real margin ×2.2 over the 2 ms budget** with `bounce.qbsk` (~3 primitives).
-   The review estimated ×6-7 on Linux; on Windows the margin is tighter. The review's
+   The audit estimated ×6-7 on Linux; on Windows the margin is tighter. The audit's
    synthetic scenes (320 and 2000 primitives) were not re-run here — when an earlier release starts
    it is worth regenerating them on Windows before deciding anything about performance.
 
@@ -68,7 +68,7 @@ node dist/cli/main.js profile examples/bounce.qbsk --frames 300
 
 ## Addendum (2026-08-07): absolute ms are not comparable across sessions
 
-an earlier release nearly produced a false alarm, and the lesson is worth more than the numbers.
+An earlier release nearly produced a false alarm, and the lesson is worth more than the numbers.
 
 `bench/phase13-persistent.md` recorded **script 0.735 ms/frame**. Measuring the same
 scene after an earlier release gave **~1.02 ms** — consistently, across three runs. That reads as a
@@ -89,7 +89,7 @@ that once measured 0.735 now measures 0.975. Nothing regressed; the machine did.
 3. The **ratios** in this file remain trustworthy — the interpreter dominating the frame,
    `diff` + `emit` being a rounding error next to it. Those held at every measurement.
 
-an earlier release was verified this way and introduced no measurable cost, which is expected:
+An earlier release was verified this way and introduced no measurable cost, which is expected:
 `bounce.qbsk` uses no tweens, and the tween store is only touched when `animate` is called.
 
 ---
@@ -160,7 +160,7 @@ is the proof, since its script bucket barely moved when dispatch got three times
 ⚠️ **The ratio itself moved across F6, and the direction is the expected one.** Measured
 on this machine: **98.1% / 1.8%** before rung 5, **95.5% / 4.4%** at `2252c21`. Compiling
 the dispatch away shrank the script bucket, so emission is now a larger share of a smaller
-frame — which is the same ~95/5 the review skill records as historically stable, arrived
+frame — which is the same ~95/5 the audit skill records as historically stable, arrived
 at from the other side. A single figure quoted from one run is not a property of the
 engine; the pair is.
 

@@ -98,7 +98,7 @@ export interface LoopResult {
   grid: GridSnapshot | null;
 }
 
-// an earlier release (docs/studio.md §16.2): the result of pressing a key on the loaded program.
+// An earlier release (docs/studio.md §16.2): the result of pressing a key on the loaded program.
 export interface KeyResult {
   ok: true;
   key: string;
@@ -118,7 +118,7 @@ export interface KeyResult {
   print: string[];
 }
 
-// an earlier release (docs/studio.md §17): the result of running a project file as the program.
+// An earlier release (docs/studio.md §17): the result of running a project file as the program.
 // `source` is deliberately absent — the whole point is that the file's text never
 // crosses the wire. `lines` tells the agent what it loaded without sending it back.
 export interface LoadResult {
@@ -135,7 +135,7 @@ export interface LoadResult {
   print: string[];
 }
 
-// an earlier release (docs/studio.md §16.3): one line of the session log.
+// An earlier release (docs/studio.md §16.3): one line of the session log.
 export interface TraceEntry {
   /** Monotonic and never reused: the cursor `since` takes. */
   seq: number;
@@ -159,13 +159,13 @@ export interface TraceResult {
   dropped: number;
 }
 
-// an earlier release: a procedurally generated pixel-art sprite (examples/lib/pixelart.qbsk +
+// An earlier release: a procedurally generated pixel-art sprite (examples/lib/pixelart.qbsk +
 // src/tools/spriteGen.ts). `svg` is the full SVG text inline — an agent gets visual
 // feedback without a second round-trip to read the file back.
 export interface GenerateSpriteResult {
   ok: true;
   seed: number;
-  // an earlier release: null for the free-form blob, otherwise the requested silhouette name
+  // An earlier release: null for the free-form blob, otherwise the requested silhouette name
   // (e.g. "sword") — mask-gated generation, found necessary live: a seed alone can't
   // target a specific recognizable object.
   shape: string | null;

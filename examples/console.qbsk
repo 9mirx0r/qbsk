@@ -61,7 +61,7 @@ layer frame z: 0
 
 // The scrollback draws in a LOOP (docs/engine.md §11.11) — the console cannot know how
 // many lines it has, so a fixed list of `put` statements could never have worked. This
-// is the feature Phase D added, earning its keep on the first real screen that needed it.
+// is the feature an earlier release added, earning its keep on the first real screen that needed it.
 layer scroll z: 1
     color fg: bright-green
     var n = len(lines)

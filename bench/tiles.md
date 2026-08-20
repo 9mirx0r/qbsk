@@ -1,6 +1,6 @@
 # QBSK — tileset lookup workload
 
-an earlier release (C1) criterion 1: **measure before designing.** The question was where a tile
+An earlier release (C1) criterion 1: **measure before designing.** The question was where a tile
 lookup should happen in the paint pipeline. A tileset renderer paints an image for a cell
 that has a tile and falls back to the character otherwise, and a 120x40 grid is 4800 cells
 — so the obvious concern is that "resolve every cell every frame" eats the frame budget.

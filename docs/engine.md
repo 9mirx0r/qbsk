@@ -1,6 +1,6 @@
 # QBSK — ASCII Engine Spec (docs/engine.md)
 
-> **Status:** v0.1 — this document is the specification. Any engine change is made here
+> **Status:** 1.0 — this document is the specification. Any engine change is made here
 > corrected architecture decisions. Every engine implementation complies with this spec.
 
 ---
@@ -249,7 +249,7 @@ state — the full mount happens once per frame (§7).
   points** plus the fractional form; translation and scale pivot. An object anchored at
   center moves without jumps (the pivot doesn't change with position). The anchor is a
   property of the `sprite` primitive, never of the `.qba` file (§12).
-- v0.1 transformations: translate (`at`/`world:` + derivation via `gameTime()`) and
+- 1.0 transformations: translate (`at`/`world:` + derivation via `gameTime()`) and
   scale (character repetition, `scale: (fx, fy)`). **No rotation** (documented
   as future).
 - Clipping in composition with world coords included: outside the canvas it is discarded.
@@ -1501,7 +1501,7 @@ Revisit past **~5000 entities per turn**, which is where the table crosses the f
 
 ### 12.2 The one thing the engine has to add: identity
 
-> ⚠️ **Correction (an earlier release).** This section was written before an earlier release, and its opening
+> ⚠️ **Correction (an earlier release).** This section was written before that release, and its opening
 > premise — that the language rejects `list[i] = v` — **is no longer true**.
 > `list[i] = v`, `dict["k"] = v` and their compound forms are valid assignment targets
 > (`docs/language.md` §4.4), including nested targets like `goblins[i]["hp"] -= 1`, and

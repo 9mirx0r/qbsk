@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { SceneProgram, runQbsk } from "../../src/interp/interpreter.js";
 import { parse } from "../../src/parser/parser.js";
 
-// an earlier release — persistent state model (docs/language.md §7.7). The interpreter is
+// An earlier release — persistent state model (docs/language.md §7.7). The interpreter is
 // created once, the top level runs once; per frame the handlers dispatch and the
 // scene re-composes from the live environment. A var mutated in a handler MUST
 // persist into the following frames — that is what Criterion 3 proves.

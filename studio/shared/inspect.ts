@@ -1,7 +1,7 @@
 // What the live program is holding, as rows (docs/studio.md §19).
 //
 // The Inspector pane existed from the first version of the Studio and its contents were
-// the sentence "Populated in Phase 12 (qbsk_inspect)." — shipped, visible, and a promise
+// the sentence "Populated in an earlier release (qbsk_inspect)." — shipped, visible, and a promise
 // rather than a feature. The machinery it needed was already there: `varNames()` and
 // `inspect()` on the frame host, which the engine console has used for `vars` and `get`
 // all along. Nothing called them from the window.

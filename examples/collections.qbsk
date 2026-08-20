@@ -59,7 +59,7 @@ print("has inventory: " + str(has(character, "inventory")))
 push(character["position"], 0)
 print("position + z: " + str(character["position"]))
 
-// Index assignment (Phase 30) — the one thing the natives above never covered:
+// Index assignment (an earlier release) — the one thing the natives above never covered:
 // mutating ONE element/key of an existing list/dict without rebuilding the whole
 // value. `character["level"] += 1` overwrites an existing key in place; `character["guild"]
 // = "none"` ADDS a key that was never there; `inventory[0]["stats"][0] = 15` replaces one

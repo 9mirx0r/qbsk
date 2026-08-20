@@ -1,4 +1,4 @@
-// an earlier release — procedural pixel-art sprite tool, CLI entry point (06-active-language-phases.md).
+// An earlier release — procedural pixel-art sprite tool, CLI entry point (the design notes).
 //
 // A thin wrapper over src/tools/spriteGen.ts's generateSpriteAssets() — the SAME core
 // Studio's `qbsk_generate_sprite` MCP tool calls (studio/mcp/session.ts). One
@@ -6,7 +6,7 @@
 //
 // Run: node bench/sprite-gen.mjs [seed] [size] [shape]
 // size is 16 or 32 (default 16) — both match real CDDA/Dwarf Fortress tileset
-// conventions (06-active-language-phases.md's an earlier release design).
+// conventions (the design notes).
 // shape is optional: omit it for the original unguided symmetric blob (writes the
 // checked-in demo asset, pixelart_creature.qbdata + sprites/creature.svg — the ones
 // examples/pixelart_test.qbsk references); pass a name from

@@ -21,7 +21,7 @@ function out(source: string): string[] {
   return r.out;
 }
 
-describe("an earlier release: action_rules.qbsk", () => {
+describe("action_rules.qbsk", () => {
   it("a single accepting rule commits the action", () => {
     expect(
       out(`

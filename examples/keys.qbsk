@@ -1,4 +1,4 @@
-// keys.qbsk — Phase 13: persistent state + events (docs/language.md §7.7)
+// keys.qbsk — an earlier release: persistent state + events (docs/language.md §7.7)
 // The interpreter runs ONCE; on tick / on key handlers mutate top-level vars that
 // survive into the following frames, and the scene re-composes from them each frame.
 //   qbsk run --ansi --loop examples/keys.qbsk --fps 20 --frames 120
