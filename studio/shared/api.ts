@@ -67,6 +67,15 @@ export interface StudioApi {
   live(source: string, file: string, cellAspect?: number): Promise<LiveStart>;
   onFrame(handler: (frame: StudioFrame) => void): void;
   stopLive(): Promise<void>;
+  /**
+   * Tells a running scene how many cells the window can show.
+   *
+   * `StudioHost.resize` existed and was documented from the day it was written, and
+   * NOTHING called it — it was not even on this interface. So `on resize` never fired in
+   * the Studio and a scene that sized itself from the window opened at whatever its
+   * declaration said and stayed there.
+   */
+  resize(cols: number, rows: number): Promise<void>;
 
   /**
    * Send a keystroke to the LOCAL live program (docs/studio.md §14.5).

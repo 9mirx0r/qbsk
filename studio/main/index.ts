@@ -310,6 +310,15 @@ void app.whenReady().then(() => {
     },
   );
 
+  // The window changed shape; a scene that reads its size gets to know. Queued like a
+  // key, so it lands inside the next step rather than mid-frame.
+  ipcMain.handle("studio:resize", (_event, cols: number, rows: number) => {
+    // `liveHost` and not a captured `host`: the handler outlives any one run, and a
+    // resize that arrived between two scenes would otherwise reach a dead program.
+    liveHost?.resize(cols, rows);
+    return null;
+  });
+
   ipcMain.handle("studio:stopLive", () => {
     stopLive();
     return null;

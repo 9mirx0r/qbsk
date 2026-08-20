@@ -7,7 +7,7 @@ import type { MirrorEvent, SceneRun, StudioApi, StudioFrame } from "../shared/ap
 import { choosePainter, type Painter } from "./painter.js";
 import { showFatal, BOOT_HINT } from "./fatal.js";
 import { CRT_PRESETS, crtById } from "./glshader.js";
-import { fitFontSize, snapToFontGrid, CELL_ASPECT, cellAspectFor } from "./fit.js";
+import { fitFontSize, gridForBox, snapToFontGrid, CELL_ASPECT, cellAspectFor } from "./fit.js";
 import { FONTS, DEFAULT_FONT_ID, fontById, type FontChoice } from "./fonts.js";
 
 declare global {
@@ -319,7 +319,46 @@ function noteSceneSize(cols: number, rows: number): void {
   applyFit();
 }
 
-window.addEventListener("resize", applyFit);
+/**
+ * Tells the running scene how many cells the window can show.
+ *
+ * Only while a scene is live: a static compose has no `on resize` to receive it, and
+ * sending anyway would be a message into a program that is not running.
+ *
+ * The grid is measured at the CURRENT font size, which is what a terminal does — the font
+ * is fixed and the grid follows. A scene with a constant `scene S(width: 80, ...)` ignores
+ * it entirely, so this costs nothing for the scenes that do not care.
+ */
+let lastSent = "";
+async function tellSceneTheSize(): Promise<void> {
+  if (!liveRunning) {
+    return;
+  }
+  const wrap = el("canvasWrap").getBoundingClientRect();
+  const px = parseFloat(getComputedStyle(el("canvas")).fontSize) || 16;
+  const { cols, rows } = gridForBox({
+    availWidth: wrap.width,
+    availHeight: wrap.height,
+    fontPx: px,
+    chPerEm: currentFont.chPerEm,
+  });
+  if (cols <= 0 || rows <= 0) {
+    return;
+  }
+  // A drag fires `resize` dozens of times a second and most of them land on the same
+  // cell count. Re-sending is a queued event per frame for no change at all.
+  const key = `${cols}x${rows}`;
+  if (key === lastSent) {
+    return;
+  }
+  lastSent = key;
+  await api.resize(cols, rows);
+}
+
+window.addEventListener("resize", () => {
+  applyFit();
+  void tellSceneTheSize();
+});
 window.addEventListener("keydown", (ev) => {
   if (ev.key === "F5") {
     ev.preventDefault();
@@ -428,6 +467,11 @@ async function startLive(source: string, file: string): Promise<void> {
   liveRunning = true;
   liveFrames = 0;
   liveSize = "";
+  // Once at the start, and not only on a later change: without this a responsive scene
+  // opened at whatever its declaration said and stayed there until somebody dragged the
+  // window, which is exactly the defect the CLI had.
+  lastSent = "";
+  void tellSceneTheSize();
   log("ok", "live → program running, keys go to the scene");
 }
 

@@ -57,6 +57,9 @@ const api: StudioApi = {
       },
     );
   },
+  async resize(cols: number, rows: number) {
+    await ipcRenderer.invoke("studio:resize", cols, rows);
+  },
   async stopLive() {
     await ipcRenderer.invoke("studio:stopLive");
   },

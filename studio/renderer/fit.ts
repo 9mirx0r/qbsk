@@ -70,6 +70,31 @@ export function fitFontSize(input: FitInput): number {
   return Math.max(minPx, Math.min(maxPx, px));
 }
 
+/**
+ * How many cells fit in a box AT a given font size — the exact inverse of `fitFontSize`.
+ *
+ * `fitFontSize` answers "how big may the font be for this grid"; a scene that sizes itself
+ * from the window needs the other direction, and a terminal answers it the same way: the
+ * font is fixed and the grid follows. Without this the Studio could fit a scene to the
+ * window and never tell the scene what the window was.
+ */
+export function gridForBox(input: {
+  availWidth: number;
+  availHeight: number;
+  fontPx: number;
+  chPerEm?: number;
+}): { cols: number; rows: number } {
+  const { availWidth, availHeight, fontPx } = input;
+  if (availWidth <= 0 || availHeight <= 0 || fontPx <= 0) {
+    return { cols: 0, rows: 0 };
+  }
+  const ch = input.chPerEm ?? CH_PER_EM;
+  return {
+    cols: Math.max(0, Math.floor(availWidth / (fontPx * ch))),
+    rows: Math.max(0, Math.floor(availHeight / (fontPx * CELL_ASPECT))),
+  };
+}
+
 /** The pixel grid the project font is drawn on (font/LICENSE.md). */
 export const FONT_PIXEL_GRID = 8;
 
