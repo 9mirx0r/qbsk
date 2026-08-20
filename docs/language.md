@@ -2228,6 +2228,61 @@ Event handlers (`on key (k)`) do NOT take defaults. Their arguments come from th
 which supplies all of them or none, so an optional one could never be omitted — accepting
 the syntax there would be a value the language reads and can never use (I2).
 
+### 15.22 A loop can be named, and broken from the inside out (I2, I3)
+
+`break` left the loop it was standing in and no further, so leaving two loops needed a
+flag and a second `break`:
+
+```
+var found = false
+for row in grid
+    for cell in row
+        if cell == target
+            found = true
+            break
+    if found
+        break
+```
+
+Six lines to say one thing, and the flag is live afterwards for anyone to misread. A loop
+can now carry a name, and `break` can say which loop it means:
+
+```
+for row in grid as scan
+    for cell in row
+        if cell == target
+            break scan
+```
+
+The name is introduced with `as`, which is already a keyword (`use "x.qbsk" as x`), so
+nothing was added to the 51 (§17.1). It works on all three loop forms —
+`for x in list as n`, `for i in a..b as n`, `while cond as n` — because a feature
+present on two of three loops is anti-pattern 6, and the author has no way to know which
+two.
+
+`continue` takes a name on the same terms: `continue scan` starts the next iteration of
+the named loop and abandons everything inside it.
+
+**A name is not a number.** `break 2` was the other candidate and was refused: the number
+is silently wrong the moment a loop is added between the `break` and its target, and
+nothing in the program says so. A name breaks loudly instead — it stops matching, and
+the language reports.
+
+Two mistakes are reported rather than guessed at:
+
+```
+t.qbsk:4:19 — runtime: no enclosing loop is named 'scna'
+t.qbsk:6:13 — runtime: 'break outer' cannot leave the function 'find' — a loop
+is broken from inside itself, and a call is not inside it
+```
+
+The second is the one worth stating. A labelled signal that escaped a call would land in
+whatever loop the CALLER happened to be running, which is a program that does something
+different depending on who called it. It is refused at the boundary.
+
+An unlabelled `break` is unchanged in every respect, including the loop it leaves: the
+innermost one.
+
 ### 15.11 A program can raise its own error — `fail` (I2, I3)
 
 `try`/`catch` has existed since L9, and every error it ever caught came from the engine.

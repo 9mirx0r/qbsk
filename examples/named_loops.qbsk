@@ -1,0 +1,50 @@
+// named_loops.qbsk — a loop can be named, and broken from the inside out (§15.22)
+// Run: qbsk run examples/named_loops.qbsk
+
+var grid = [
+    ["...", "..#", "..."],
+    ["...", ".@.", "..."],
+    ["#..", "...", "..."],
+]
+
+// Finding something in a grid used to need a flag and two breaks. The name says which
+// loop is being left, so the search ends where it succeeds.
+var found_row = -1
+var found_col = -1
+for row, cells in grid as scan
+    for col, cell in cells
+        if contains(cell, "@")
+            found_row = row
+            found_col = col
+            break scan
+
+print("found at " + str(found_row) + "," + str(found_col))
+
+// `continue` takes a name on the same terms: it abandons everything inside and starts
+// the next pass of the loop it names.
+var clean = []
+for row, cells in grid as check
+    for cell in cells
+        if contains(cell, "#")
+            continue check
+    push(clean, row)
+
+print("rows with no wall: " + str(clean))
+
+// An unlabelled break is unchanged — it leaves the innermost loop and no further.
+var counted = 0
+for i in 0..3
+    for j in 0..3
+        if j == 2
+            break
+        counted += 1
+
+print("counted " + str(counted))
+
+// A name is not a number: inserting a loop between the break and its target does not
+// silently retarget it, the way `break 2` would.
+for a in 0..2 as outer
+    for b in 0..2
+        for c in 0..2
+            print("reached " + str(a) + str(b) + str(c))
+            break outer

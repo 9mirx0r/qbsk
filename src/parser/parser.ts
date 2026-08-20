@@ -674,11 +674,21 @@ class Parser {
         return this.parseReturn();
       case "BREAK": {
         const token = this.advance();
-        return { kind: "BreakStmt", span: token.span };
+        const label = this.parseLoopTarget(token);
+        return {
+          kind: "BreakStmt",
+          label,
+          span: spanFrom(this.file, token, this.previous()),
+        };
       }
       case "CONTINUE": {
         const token = this.advance();
-        return { kind: "ContinueStmt", span: token.span };
+        const label = this.parseLoopTarget(token);
+        return {
+          kind: "ContinueStmt",
+          label,
+          span: spanFrom(this.file, token, this.previous()),
+        };
       }
       case "USE":
         return this.parseUse();
@@ -967,14 +977,50 @@ class Parser {
     };
   }
 
+  /**
+   * The name a loop carries, when `as name` follows its header (§15.22).
+   *
+   * Introduced with `as` because `as` is ALREADY a keyword (`use "x.qbsk" as x`), so
+   * naming a loop added nothing to the 51 (§17.1) and could not break a program
+   * that keeps a variable called `label` or `outer`.
+   */
+  private parseLoopLabel(): string | null {
+    if (!this.match("AS")) {
+      return null;
+    }
+    return this.nameOf(this.expectName("the loop name after 'as'"));
+  }
+
+  /**
+   * The loop a `break` or `continue` names, or null for the innermost one.
+   *
+   * ANCHORED TO THE PHYSICAL LINE, which is the whole reason this is a function. QBSK
+   * has no end-of-line token, so a bare `break` followed by
+   *
+   *     break
+   *     stop = 1
+   *
+   * offers the parser exactly the same tokens as `break stop`, and without the line
+   * check it would silently take `stop` as the label and then fail on the `=` with an
+   * error pointing at the wrong line entirely.
+   */
+  private parseLoopTarget(keyword: Token): string | null {
+    if (!this.checkName() || this.peek().span.start.line !== keyword.span.start.line) {
+      return null;
+    }
+    return this.nameOf(this.advance());
+  }
+
   private parseWhile(): Stmt {
     const startToken = this.advance();
     const cond = this.parseExpression(0);
+    const label = this.parseLoopLabel();
     const body = this.parseBlockOrInline();
     return {
       kind: "WhileStmt",
       cond,
       body,
+      label,
       span: spanFrom(this.file, startToken, this.previous()),
     };
   }
@@ -1009,6 +1055,7 @@ class Parser {
     }
     this.expect("IN", "expected 'in' in the for loop");
     const iterable = this.parseExpression(0);
+    const label = this.parseLoopLabel();
     const body = this.parseBlockOrInline();
     if (iterable.kind === "BinOp" && iterable.op === "..") {
       if (secondName !== null) {
@@ -1030,6 +1077,7 @@ class Parser {
         from: iterable.left,
         to: iterable.right,
         body,
+        label,
         span: spanFrom(this.file, startToken, this.previous()),
       };
     }
@@ -1041,6 +1089,7 @@ class Parser {
       indexName: secondName === null ? null : name,
       iterable,
       body,
+      label,
       span: spanFrom(this.file, startToken, this.previous()),
     };
   }

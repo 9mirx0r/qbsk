@@ -107,9 +107,25 @@ class ReturnSignal {
   constructor(public readonly value: QValue) {}
 }
 
-class BreakSignal {}
+class BreakSignal {
+  /**
+   * §15.22 — the loop named, or null for the innermost one.
+   *
+   * The span travels with it because the error for a signal that leaves a function is
+   * raised at the FUNCTION boundary, and it has to point at the `break`, not at the call.
+   */
+  constructor(
+    readonly label: string | null,
+    readonly span: Span,
+  ) {}
+}
 
-class ContinueSignal {}
+class ContinueSignal {
+  constructor(
+    readonly label: string | null,
+    readonly span: Span,
+  ) {}
+}
 
 export interface RunResult {
   out: string[];
@@ -1782,7 +1798,13 @@ export class Interpreter {
           }
           const start = Math.ceil(lo.value);
           const end = Math.floor(hi.value);
+          const label = stmt.label;
           ip.loopDepth += 1;
+          // Pushed only when there IS a name: an unlabelled loop pays one null check on
+          // entry and nothing else, and the stack is read only by a labelled break.
+          if (label !== null) {
+            ip.loopLabels.push(label);
+          }
           try {
             for (let i = start; i < end; i += 1) {
               const parent = ip.env;
@@ -1792,11 +1814,21 @@ export class Interpreter {
                 try {
                   body(ip);
                 } catch (err) {
+                  // §15.22 — a signal with no label belongs to the innermost
+                  // loop, which is this one. A labelled signal belongs to this loop only
+                  // if the name matches; otherwise it keeps going outward, and some
+                  // enclosing loop claims it.
                   if (err instanceof BreakSignal) {
-                    break;
+                    if (err.label === null || err.label === label) {
+                      break;
+                    }
+                    throw err;
                   }
                   if (err instanceof ContinueSignal) {
-                    continue;
+                    if (err.label === null || err.label === label) {
+                      continue;
+                    }
+                    throw err;
                   }
                   throw err;
                 }
@@ -1805,6 +1837,9 @@ export class Interpreter {
               }
             }
           } finally {
+            if (label !== null) {
+              ip.loopLabels.pop();
+            }
             ip.loopDepth -= 1;
           }
           return null;
@@ -1821,7 +1856,13 @@ export class Interpreter {
           if (list.type !== "list") {
             ip.runtime(`'for in' expects a list, got '${typeName(list)}'`, span);
           }
+          const label = stmt.label;
           ip.loopDepth += 1;
+          // Pushed only when there IS a name: an unlabelled loop pays one null check on
+          // entry and nothing else, and the stack is read only by a labelled break.
+          if (label !== null) {
+            ip.loopLabels.push(label);
+          }
           try {
             for (let i = 0; i < list.items.length; i += 1) {
               const item = list.items[i]!;
@@ -1836,11 +1877,21 @@ export class Interpreter {
                 try {
                   body(ip);
                 } catch (err) {
+                  // §15.22 — a signal with no label belongs to the innermost
+                  // loop, which is this one. A labelled signal belongs to this loop only
+                  // if the name matches; otherwise it keeps going outward, and some
+                  // enclosing loop claims it.
                   if (err instanceof BreakSignal) {
-                    break;
+                    if (err.label === null || err.label === label) {
+                      break;
+                    }
+                    throw err;
                   }
                   if (err instanceof ContinueSignal) {
-                    continue;
+                    if (err.label === null || err.label === label) {
+                      continue;
+                    }
+                    throw err;
                   }
                   throw err;
                 }
@@ -1849,6 +1900,9 @@ export class Interpreter {
               }
             }
           } finally {
+            if (label !== null) {
+              ip.loopLabels.pop();
+            }
             ip.loopDepth -= 1;
           }
           return null;
@@ -1858,7 +1912,13 @@ export class Interpreter {
         const cond = Interpreter.compileExpr(stmt.cond);
         const body = Interpreter.compileBlock(stmt.body);
         return (ip: Interpreter) => {
+          const label = stmt.label;
           ip.loopDepth += 1;
+          // Pushed only when there IS a name: an unlabelled loop pays one null check on
+          // entry and nothing else, and the stack is read only by a labelled break.
+          if (label !== null) {
+            ip.loopLabels.push(label);
+          }
           try {
             // NO scope is created here, and that is not an omission.
             //
@@ -1875,16 +1935,27 @@ export class Interpreter {
               try {
                 body(ip);
               } catch (err) {
+                // §15.22 — as in the for loops: unlabelled is mine, labelled is
+                // mine only by name, anything else travels outward.
                 if (err instanceof BreakSignal) {
-                  break;
+                  if (err.label === null || err.label === label) {
+                    break;
+                  }
+                  throw err;
                 }
                 if (err instanceof ContinueSignal) {
-                  continue;
+                  if (err.label === null || err.label === label) {
+                    continue;
+                  }
+                  throw err;
                 }
                 throw err;
               }
             }
           } finally {
+            if (label !== null) {
+              ip.loopLabels.pop();
+            }
             ip.loopDepth -= 1;
           }
           return null;
@@ -1892,20 +1963,31 @@ export class Interpreter {
       }
       case "BreakStmt": {
         const span = stmt.span;
+        const label = stmt.label;
         return (ip: Interpreter) => {
           if (ip.loopDepth === 0) {
             ip.runtime("'break' outside a loop", span);
           }
-          throw new BreakSignal();
+          // §15.22 — checked HERE, where the span points at the name the author
+          // wrote. Letting the signal travel and reporting wherever it stopped would put
+          // the caret on the outermost loop instead, which is not where the typo is.
+          if (label !== null && !ip.loopLabels.includes(label)) {
+            ip.runtime(`no enclosing loop is named '${label}'`, span);
+          }
+          throw new BreakSignal(label, span);
         };
       }
       case "ContinueStmt": {
         const span = stmt.span;
+        const label = stmt.label;
         return (ip: Interpreter) => {
           if (ip.loopDepth === 0) {
             ip.runtime("'continue' outside a loop", span);
           }
-          throw new ContinueSignal();
+          if (label !== null && !ip.loopLabels.includes(label)) {
+            ip.runtime(`no enclosing loop is named '${label}'`, span);
+          }
+          throw new ContinueSignal(label, span);
         };
       }
       case "ReturnStmt": {
@@ -3021,6 +3103,16 @@ export class Interpreter {
    * a call costs two array writes and no allocation once a program is warm. A pushed and
    * popped array would allocate on every call in the hottest path in the language.
    */
+  /**
+   * The names of the loops running right now, innermost last (§15.22).
+   *
+   * Not reset per call, deliberately. A `break outer` inside a function DOES find the
+   * caller's `outer` here, and that is what makes the function-boundary error above
+   * possible: the alternative reports "no enclosing loop is named 'outer'", which is
+   * false — one exists, and the real problem is that a call cannot reach it.
+   */
+  loopLabels: (string | null)[] = [];
+
   private readonly frameNames: string[] = [];
   private readonly frameSpans: (Span | null)[] = [];
 
@@ -3130,6 +3222,18 @@ export class Interpreter {
       } catch (err) {
         if (err instanceof ReturnSignal) {
           return err.value;
+        }
+        // §15.22 — the name IS in scope (the break checked), but it belongs to a
+        // loop in the caller. Allowed through, it would break whatever loop the caller
+        // happened to be running: a program that does something different depending on
+        // who called it. It is also the only way a signal could reach the host, which
+        // would be a raw JS object surfacing as an error with no span (I3).
+        if (err instanceof BreakSignal || err instanceof ContinueSignal) {
+          const word = err instanceof BreakSignal ? "break" : "continue";
+          this.runtime(
+            `'${word} ${err.label}' cannot leave the function '${callee.name}' — a loop is broken from inside itself, and a call is not inside it`,
+            err.span,
+          );
         }
         throw err;
       } finally {

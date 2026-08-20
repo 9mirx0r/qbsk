@@ -385,7 +385,7 @@ META name: walker, width: 4, height: 4
    them for that reason.
 3. The engine never writes to stdout outside `render.ts` (emission phase).
 4. **`npm run build` + `npm run typecheck` + `npm run lint` + `npm test` green** before
-   closing a milestone. Current baseline: 109 test files / 1,934 tests.
+   closing a milestone. Current baseline: 110 test files / 1,949 tests.
 5. Every new feature with a working example in `examples/`.
 
 ## 14. Forbidden anti-patterns

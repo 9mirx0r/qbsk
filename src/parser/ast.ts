@@ -163,6 +163,8 @@ export interface ForRange {
   from: Expr;
   to: Expr;
   body: Block;
+  /** The name this loop carries (§15.22), or null. See `WhileStmt.label`. */
+  label: string | null;
   span: Span;
 }
 
@@ -178,6 +180,8 @@ export interface ForList {
   indexName: string | null;
   iterable: Expr;
   body: Block;
+  /** The name this loop carries (§15.22), or null. See `WhileStmt.label`. */
+  label: string | null;
   span: Span;
 }
 
@@ -185,16 +189,33 @@ export interface WhileStmt {
   kind: "WhileStmt";
   cond: Expr;
   body: Block;
+  /**
+   * The name this loop carries (§15.22), or null when it has none.
+   *
+   * A NAME and not a depth. `break 2` was the other candidate: the number is silently
+   * wrong the moment a loop is added between the break and its target, and nothing in
+   * the program says so.
+   */
+  label: string | null;
   span: Span;
 }
 
 export interface BreakStmt {
   kind: "BreakStmt";
+  /**
+   * The loop this leaves (§15.22), or null for the innermost one.
+   *
+   * Anchored to the physical line at parse time: there is no end-of-line token, so
+   * `break` with a name one line below looks exactly like `break name` without it.
+   */
+  label: string | null;
   span: Span;
 }
 
 export interface ContinueStmt {
   kind: "ContinueStmt";
+  /** The loop this restarts (§15.22), or null for the innermost one. */
+  label: string | null;
   span: Span;
 }
 
@@ -630,9 +651,9 @@ export function printStmt(stmt: Stmt, depth: number): string[] {
       return closeWith(lines, 1);
     }
     case "BreakStmt":
-      return [`${ind}(Break)`];
+      return [`${ind}(Break${stmt.label === null ? "" : ` ${stmt.label}`})`];
     case "ContinueStmt":
-      return [`${ind}(Continue)`];
+      return [`${ind}(Continue${stmt.label === null ? "" : ` ${stmt.label}`})`];
     case "ReturnStmt":
       return [
         `${ind}(Return${stmt.value ? ` ${exprText(stmt.value)}` : ""})`,
