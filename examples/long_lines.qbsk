@@ -1,0 +1,41 @@
+// long_lines.qbsk — a line that ends with an operator is not finished (§15.23)
+// Run: qbsk run examples/long_lines.qbsk
+
+// A long expression no longer needs parentheses added for no reason except to buy the
+// line break. The indentation of a continuation line is decoration, exactly as it is
+// inside a bracket.
+func contact_pressure(force, area, angle)
+    return force /
+        area *
+        (1.0 - angle * 0.4)
+
+print("pressure " + format(contact_pressure(120.0, 3.5, 0.25), 2))
+
+// A condition reads better broken at its joints than wrapped in parentheses.
+var stamina = 0.18
+var wounds = 4
+var mood = 0.35
+
+if stamina < 0.2 and
+        wounds > 3 and
+        mood < 0.4
+    print("the crowd has turned")
+
+// The block the continuation was written in is still open afterwards — the line break
+// carries no meaning at all, so nothing was closed by it.
+var total = 0
+for i in 0..5
+    total = total +
+        i *
+        2
+    total += 1
+
+print("total " + str(total))
+
+// A comment or a blank line between the halves does not end it either.
+var span = 10 +
+
+    // the far edge
+    22
+
+print("span " + str(span))

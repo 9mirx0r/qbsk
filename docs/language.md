@@ -2283,6 +2283,71 @@ different depending on who called it. It is refused at the boundary.
 An unlabelled `break` is unchanged in every respect, including the loop it leaves: the
 innermost one.
 
+### 15.23 A line that ends with an operator is not finished (I3)
+
+§15.14 made a line break inside `( )`, `[ ]` or `{ }` carry no meaning, so a long call
+or a long list can be laid out over several lines. Everything else still had to fit on one
+line, which meant a long condition had to be written like this:
+
+```
+if (fighter.stamina < 0.2 and fighter.wounds > 3
+        and crowd.mood < 0.4)
+```
+
+— parentheses added for no reason except to buy a line break. Now a line that **ends
+with an operator** is understood to continue on the next one:
+
+```
+if fighter.stamina < 0.2 and
+        fighter.wounds > 3 and
+        crowd.mood < 0.4
+    yield()
+
+var pressure = contact_force /
+    contact_area
+```
+
+The rule is deliberately narrow, and it is about the END of the line rather than the start
+of the next: **a line ending in `+ - * / % == != < > <= >= and or not = += -= , . ..`
+cannot be a finished statement in any QBSK program.** Nothing that used to run changes
+meaning — every one of these was a syntax error before, and widening an error into a
+working case is not a break (§17.1).
+
+The other direction — continuing when the NEXT line STARTS with an operator — was
+not designed at all, and **is already in the language by accident.** QBSK has no
+end-of-line token, so at equal indentation the expression parser has always walked
+straight across the break:
+
+```
+var c = a
++ b
+```
+
+has always meant `a + b`. That was undocumented until §15.23 was written, and it is
+the rule with the real hazard: `-x` opens a valid statement, so
+
+```
+var damage = roll_damage
+-armour
+```
+
+is `roll_damage - armour` and nothing says so. The end-of-line rule is the one to reach for
+because it cannot do that: a line ending in an operator has no other reading.
+
+Closing the accident would make a working program an error, which is a break under
+§17.1 and is not done here on the way past. It is recorded rather than quietly left.
+
+`:` is NOT in the set, and could not be. It opens a block, so a line ending in `:` is
+already meaningful and already common.
+
+Implemented in the LEXER, for the reason §15.14 records: a parser that skips the INDENT
+still receives the matching DEDENT, and that surplus DEDENT closes whatever block the
+expression was written inside. Not emitting the pair is the only version of the rule that
+cannot leave the indent stack askew.
+
+An indented continuation is still just layout — the indentation of a continuation line
+means nothing, exactly as inside a bracket.
+
 ### 15.11 A program can raise its own error — `fail` (I2, I3)
 
 `try`/`catch` has existed since L9, and every error it ever caught came from the engine.

@@ -358,7 +358,7 @@ alias. `use "x.qbsk" as line` does not parse.
    every benchmark still RUNNING, never on absolute milliseconds.
 5. If a change breaks an example in `examples/`, the PR is not accepted until fixed.
 
-Current baseline to beat, not to match: **110 test files / 1,949 tests, all green.** If the
+Current baseline to beat, not to match: **110 test files / 1,954 tests, all green.** If the
 count drops, find out which test was deleted before anything else.
 
 ## 10. Forbidden anti-patterns

@@ -57,6 +57,44 @@ function isIdentPart(ch: string): boolean {
   return isIdentStart(ch) || isDigit(ch);
 }
 
+/**
+ * The tokens that cannot end a statement, so a line ending in one continues (§15.23).
+ *
+ * `COLON` is deliberately absent and could not be added: it opens a block, so a line
+ * ending in `:` is already meaningful and already common.
+ *
+ * The brackets are absent too, because §15.14 already holds a line open inside them by
+ * counting depth — a second rule saying the same thing could only disagree with the
+ * first.
+ */
+const CONTINUES: ReadonlySet<TokenType> = new Set<TokenType>([
+  "PLUS",
+  "MINUS",
+  "STAR",
+  "SLASH",
+  "PERCENT",
+  "EQ_EQ",
+  "BANG_EQ",
+  "LT",
+  "GT",
+  "LTE",
+  "GTE",
+  "EQ",
+  "PLUS_EQ",
+  "MINUS_EQ",
+  "AND",
+  "OR",
+  "NOT",
+  "COMMA",
+  "DOT",
+  "DOT_DOT",
+  "AMP",
+  "PIPE",
+  "CARET",
+  "SHL",
+  "SHR",
+]);
+
 export class Lexer {
   private readonly file: string;
   private readonly src: string;
@@ -140,6 +178,22 @@ export class Lexer {
     return this.tokens;
   }
 
+  /**
+   * Did the previous line end on something that cannot end a statement? (§15.23)
+   *
+   * Every token in CONTINUES is a syntax error at the end of a line in every QBSK program
+   * written so far, which is what makes reading the next line as its continuation safe:
+   * widening an error into a working case is not a break (§17.1).
+   *
+   * Blank and comment lines never reach here — `handleLineStart` returns before this
+   * for them — so the operator is still the last token seen and a continuation may be
+   * separated from its opening by either.
+   */
+  private lineIsUnfinished(): boolean {
+    const last = this.tokens[this.tokens.length - 1];
+    return last !== undefined && CONTINUES.has(last.type);
+  }
+
   private handleLineStart(): void {
     const level = this.measureIndent();
     if (this.atLineEndOrComment()) {
@@ -148,6 +202,14 @@ export class Lexer {
     if (this.brackets > 0) {
       // A continuation line. Its indentation is decoration: the expression is held open
       // by the bracket, not by the layout.
+      this.atLineStart = false;
+      return;
+    }
+    if (this.lineIsUnfinished()) {
+      // §15.23 — the previous line ended on an operator, so it was not a statement
+      // and this line is the rest of it. Handled exactly like the bracket case, and for
+      // the same reason: emitting the INDENT without its DEDENT, or the DEDENT without
+      // its INDENT, leaves the indent stack askew and closes a block nobody closed.
       this.atLineStart = false;
       return;
     }

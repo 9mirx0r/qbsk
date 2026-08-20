@@ -120,10 +120,10 @@ npm run studio
 |---|---|
 | `src/` | the language and the engine — lexer, parser, interpreter, natives, compositor, CLI |
 | `studio/` | the desktop editor (Electron) |
-| `examples/` | **48 runnable programs**, from four lines to a playable first-person demo |
+| `examples/` | **49 runnable programs**, from four lines to a playable first-person demo |
 | `docs/` | the specification: `language.md`, `engine.md`, `audio.md`, `studio.md`, and `tour.md` |
 | `skills/` | **the manual — read this before writing QBSK** |
-| `tests/` | **1,949 tests green across 110 files**, with 26 byte-for-byte golden outputs |
+| `tests/` | **1,954 tests green across 110 files**, with 26 byte-for-byte golden outputs |
 | `bench/` | the performance harness and its recorded baselines |
 
 ### `skills/` is not optional reading
