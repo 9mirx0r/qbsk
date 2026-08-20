@@ -277,7 +277,7 @@ void app.whenReady().then(() => {
       stopLive();
       const host = new StudioFrameHost(source, file, cellAspect);
       if (host.error !== null) {
-        return { ok: false, error: host.error };
+        return { ok: false, error: host.error, errorMark: host.errorMark };
       }
       liveHost = host;
       // The console must point at the program that is actually running, or `vars`
@@ -299,6 +299,17 @@ void app.whenReady().then(() => {
         if (frame === null) {
           // A runtime error latches in the interpreter and every later step is a
           // no-op, so keep stopping rather than spinning at 30 Hz forever.
+          //
+          // §18 — and SAY SO. This used to stop and return: a scene that died
+          // mid-frame left the canvas frozen on its last good frame, the log empty and
+          // the editor unmarked, which reads as the Studio having lost interest.
+          const failure = host.error;
+          if (failure !== null) {
+            sender.send("studio:liveError", {
+              error: failure,
+              errorMark: host.errorMark,
+            });
+          }
           stopLive();
           return;
         }
@@ -306,7 +317,7 @@ void app.whenReady().then(() => {
         publish(win, frame.text, "scene");
         sender.send("studio:frame", frame);
       }, Math.round(1000 / LIVE_FPS));
-      return { ok: true, error: null };
+      return { ok: true, error: null, errorMark: null };
     },
   );
 
@@ -356,7 +367,7 @@ void app.whenReady().then(() => {
     if (!open) {
       engineConsole.announce(false);
       stopConsole();
-      return { ok: true, error: null };
+      return { ok: true, error: null, errorMark: null };
     }
     engineConsole.setTarget(liveHost);
     engineConsole.announce(true);
@@ -365,7 +376,7 @@ void app.whenReady().then(() => {
       const host = new StudioFrameHost(source, CONSOLE_SCENE);
       if (host.error !== null) {
         consoleOpen = false;
-        return { ok: false, error: host.error };
+        return { ok: false, error: host.error, errorMark: host.errorMark };
       }
       consoleHost = host;
     }
@@ -388,7 +399,7 @@ void app.whenReady().then(() => {
         sender.send("studio:frame", frame);
       }
     }, Math.round(1000 / LIVE_FPS));
-    return { ok: true, error: null };
+    return { ok: true, error: null, errorMark: null };
   });
 
   // Automated acceptance check (docs/studio.md §7): only active when

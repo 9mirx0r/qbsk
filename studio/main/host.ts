@@ -19,6 +19,9 @@ import type {
   InspectedValue,
 } from "./console.js";
 import { formatQbskError } from "../../src/interp/error.js";
+import type { QbskError } from "../../src/interp/error.js";
+import { headline } from "../shared/marks.js";
+import type { ErrorMark } from "../shared/marks.js";
 import { parse } from "../../src/parser/parser.js";
 import type { SceneRun, StudioFrame } from "../shared/api.js";
 
@@ -37,6 +40,19 @@ export function readScene(file: string): { file: string; source: string } | null
 
 // Static scene: the same pipeline the CLI runs (`qbsk run --ansi`), producing
 // the plain-text rows, the ANSI bytes and the diff that drives the DOM painter.
+/** The position of an error, for the editor's gutter (docs/studio.md §18). */
+function markOf(err: QbskError, rendered: string): ErrorMark {
+  return {
+    line: err.span.start.line,
+    col: err.span.start.col,
+    endLine: err.span.end.line,
+    endCol: err.span.end.col,
+    offset: err.span.start.offset,
+    endOffset: err.span.end.offset,
+    message: headline(rendered),
+  };
+}
+
 export function runStaticScene(
   source: string,
   file: string,
@@ -51,6 +67,7 @@ export function runStaticScene(
   });
   const elapsedMs = performance.now() - t0;
   if (result.error !== null) {
+    const rendered = formatQbskError(source, result.error);
     return {
       ok: false,
       text: [],
@@ -60,7 +77,8 @@ export function runStaticScene(
       width: 0,
       height: 0,
       elapsedMs,
-      error: formatQbskError(source, result.error),
+      error: rendered,
+      errorMark: markOf(result.error, rendered),
     };
   }
   if (result.canvas === null) {
@@ -74,6 +92,7 @@ export function runStaticScene(
       height: 0,
       elapsedMs,
       error: null,
+      errorMark: null,
     };
   }
   const canvas = result.canvas;
@@ -97,6 +116,7 @@ export function runStaticScene(
     height: canvas.height,
     elapsedMs,
     error: null,
+    errorMark: null,
   };
 }
 
@@ -113,6 +133,8 @@ export class StudioFrameHost implements ConsoleTarget {
   private readonly cellAspect: number | undefined;
   private program: SceneProgram | null;
   private parseError: string | null;
+  /** The parse failure itself, for `errorMark` (docs/studio.md §18). */
+  private parseErrorObject: QbskError | null = null;
   private readonly runtime: GameRuntime = { gameTime: 0 };
   private buffer: ScreenBuffer | null = null;
   /**
@@ -139,11 +161,16 @@ export class StudioFrameHost implements ConsoleTarget {
   private build(): { program: SceneProgram | null; error: string | null } {
     const parsed = parse(this.source, this.file);
     if (parsed.errors.length > 0) {
+      // Kept as an OBJECT as well as a string: the rendering cannot be turned back into
+      // a line and a column without a regular expression over a message format that is
+      // free to change.
+      this.parseErrorObject = parsed.errors[0]!;
       return {
         program: null,
         error: formatQbskError(this.source, parsed.errors[0]!),
       };
     }
+    this.parseErrorObject = null;
     return {
       program: new SceneProgram(parsed.ast, {
         baseDir: this.baseDir,
@@ -274,6 +301,20 @@ export class StudioFrameHost implements ConsoleTarget {
       return formatQbskError(this.source, this.program.error);
     }
     return null;
+  }
+
+  /**
+   * The same failure as `error`, in numbers (docs/studio.md §18).
+   *
+   * Kept beside `error` rather than folded into it because the renderer needs both: the
+   * rendered text for the log, the position for the gutter.
+   */
+  get errorMark(): ErrorMark | null {
+    const err = this.parseErrorObject ?? this.program?.error ?? null;
+    if (err === null) {
+      return null;
+    }
+    return markOf(err, formatQbskError(this.source, err));
   }
 
   /**

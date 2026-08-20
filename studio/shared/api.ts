@@ -1,7 +1,14 @@
 import type { DiffLine } from "../../src/engine/diff.js";
+import type { ErrorMark } from "./marks.js";
+
+export type { ErrorMark };
 
 // Shared, transport-safe shapes for the IPC boundary between the main process
 // and the renderer (docs/studio.md §3/§4). Types only: erased at runtime.
+//
+// `ErrorMark` is re-exported from `./marks.js`, which is in `shared/` and not in
+// `renderer/` for a boundary reason: the MAIN process fills the mark in, so a module
+// both sides run cannot live in one side's folder.
 
 export interface SceneRun {
   ok: boolean;
@@ -13,6 +20,15 @@ export interface SceneRun {
   height: number;
   elapsedMs: number;
   error: string | null;
+  /**
+   * WHERE the error is, in numbers (docs/studio.md §18).
+   *
+   * Separate from `error`, which is the rendered text. The renderer needs the line and
+   * the offsets, and the alternative was a regular expression over a formatted message
+   * in the renderer -- which works until the message format changes, and then silently
+   * marks nothing.
+   */
+  errorMark: ErrorMark | null;
 }
 
 export interface FrameMetrics {
@@ -66,6 +82,8 @@ export interface StudioApi {
    */
   live(source: string, file: string, cellAspect?: number): Promise<LiveStart>;
   onFrame(handler: (frame: StudioFrame) => void): void;
+  /** Called when a running scene stops because it failed (docs/studio.md §18). */
+  onLiveError(handler: (failure: LiveFailure) => void): void;
   stopLive(): Promise<void>;
   /**
    * Tells a running scene how many cells the window can show.
@@ -124,6 +142,21 @@ export interface StudioApi {
 export interface LiveStart {
   ok: boolean;
   error: string | null;
+  /** Where the program failed to start (docs/studio.md §18). */
+  errorMark: ErrorMark | null;
+}
+
+/**
+ * A running scene that stopped because it failed (docs/studio.md §18).
+ *
+ * This channel exists because the failure used to be DROPPED. `host.next()` returns null
+ * on a runtime error and the main process called `stopLive()` and returned -- so a scene
+ * that died mid-frame simply stopped, with nothing in the log, nothing in the editor and
+ * nothing on the canvas to say why.
+ */
+export interface LiveFailure {
+  error: string;
+  errorMark: ErrorMark | null;
 }
 
 /**

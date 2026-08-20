@@ -47,6 +47,8 @@
   --arg: #9ecb7a;
   --dot: #3f5f7a;
   --ok: #9ecb7a;
+  /* The failing line, and the strip that names it (docs/studio.md §18). */
+  --bad: #6b1f1f;
   --font: "QBSK Unifont", "Cascadia Mono", Consolas, ui-monospace, monospace;
 }
 
@@ -198,6 +200,59 @@ body {
   flex: 0.85;
   margin-left: 2px;
   min-width: 0;
+}
+
+#editorBody {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  background: var(--deep);
+}
+
+#gutter {
+  flex: none;
+  padding: 8px 6px 8px 8px;
+  background: var(--deep);
+  color: var(--gutter);
+  font-family: var(--font);
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: right;
+  user-select: none;
+  overflow: hidden;
+  white-space: pre;
+}
+
+/* The failing line, in the gutter. A background rather than a glyph: a marker character
+   would shift the digits and make the column drift by one on the marked line only. */
+.gut-bad {
+  background: var(--bad);
+  color: #ffd7d7;
+  font-weight: 700;
+}
+
+/* The strip sits UNDER the editor and above the canvas -- in the pane the author is
+   looking at, not in the MCP log at the bottom of the window where it used to go. */
+#errorStrip {
+  flex: none;
+  display: block;
+  width: 100%;
+  border: none;
+  border-top: 1px solid var(--bev-dark);
+  padding: 4px 8px;
+  background: var(--bad);
+  color: #ffe4e4;
+  font-family: var(--font);
+  font-size: 11px;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#errorStrip:hover {
+  background: #7d2626;
 }
 
 #editor {

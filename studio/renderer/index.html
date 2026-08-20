@@ -119,7 +119,14 @@
   <div id="midrow">
     <section class="pane" id="editorPane">
       <div class="pane-caption">editor</div>
-      <textarea id="editor" spellcheck="false" autocomplete="off"></textarea>
+      <!-- The gutter scrolls with the textarea rather than inside it: a textarea cannot
+           style a range, so the line numbers live beside it and are kept in step
+           (docs/studio.md §18). -->
+      <div id="editorBody">
+        <div id="gutter" aria-hidden="true"></div>
+        <textarea id="editor" spellcheck="false" autocomplete="off"></textarea>
+      </div>
+      <button id="errorStrip" type="button" hidden></button>
     </section>
     <section class="pane" id="inspectorPane">
       <div class="pane-caption">Inspector</div>

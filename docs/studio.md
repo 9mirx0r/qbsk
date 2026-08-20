@@ -1147,4 +1147,75 @@ ambiguous. After this section:
 Each answers one question, and none of them changes meaning based on state the caller has
 to track.
 
+## 18. The error, on the line that caused it
+
+### 18.1 The problem
+
+A failed run put one line in the MCP activity strip: the pane furthest from the code, in
+the smallest type, below the canvas. The message itself was complete — span, fragment,
+and since §15.20 the call trace — and it was in the last place anyone was looking.
+The editor is a plain `<textarea>` with no gutter, so the line number in that message had
+to be counted out by hand.
+
+Worse, the Run button did not report at all. There are THREE ways a run can fail, and they
+were not equally served:
+
+| Path | Where it failed | What the author saw |
+|---|---|---|
+| Static eval | `runStaticScene` | one line in the MCP log |
+| Live start | `StudioFrameHost` constructor | one line in the MCP log |
+| Live frame | `host.next()` returning null | **nothing at all** |
+
+The third is the one the Run button uses after the first frame. A scene that died mid-frame
+left the canvas frozen on its last good frame, the log empty and the editor unmarked, which
+reads as the Studio having lost interest rather than as a program with a bug in it.
+
+### 18.2 What it does now
+
+A gutter of line numbers sits beside the editor. When a run fails, every line of the
+error's span is marked in it, and a strip appears **under the editor, inside the pane the
+author is looking at**, saying the line, the column and the message. Clicking the strip
+puts the caret on the error.
+
+All three paths above reach it. The live-frame path needed a channel of its own
+(`studio:liveError`), because the failure was previously discarded rather than reported.
+
+### 18.3 What is worth knowing
+
+**The position travels as numbers, not as text.** `SceneRun`, `LiveStart` and
+`LiveFailure` all carry an `ErrorMark` — line, column and character offsets —
+beside the rendered message. The alternative was a regular expression over a formatted
+error inside the renderer, which works until the message format changes and then silently
+marks nothing.
+
+**`studio/shared/marks.ts` has no DOM in it.** Every decision — how many rows the
+gutter needs, which of them are bad, what the strip says, where the caret goes — is a
+function from data to data, and is tested without a browser. That is the same reason
+`studio/renderer/fatal.ts` is built that way.
+
+**The gutter is a sibling of the textarea, not a part of it.** A `<textarea>` cannot style
+a range, so the numbers cannot live inside it, and the two are kept in step by matching
+`font-size`, `line-height`, `font-family` and top padding exactly, plus a scroll handler.
+A test asserts those four match, because a line-height off by a hair looks right in a
+ten-line file and is a full line out at line 200 — no amount of looking at a short file
+finds it.
+
+**The mark is a background, not a character.** A marker glyph in the gutter would push that
+one line`s digits a column to the right.
+
+**Every write to the editor goes through `setEditorSource`.** Assigning to `editor.value`
+fires no `input` event, and the gutter listens for one. Both existing writes bypassed it:
+the gutter was empty at boot and showed the previous file's numbers after opening a new
+one. Fixing the two sites would have left the third to be written later, so there is one
+door and a test that says so.
+
+**The selection is clamped.** The offsets come from a run and the author can type before
+clicking the strip. Unclamped, a document that got shorter throws inside the DOM —
+which is the fatal overlay appearing because someone pressed backspace.
+
+### 18.4 What it does not do
+
+No syntax highlighting, no squiggly underline under the span, and no second error. A
+`<textarea>` can do none of the first two without becoming a different editor, and QBSK
+reports one error at a time by design.
 

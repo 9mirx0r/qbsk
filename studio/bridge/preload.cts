@@ -3,7 +3,7 @@
 // so this is the only channel from the renderer to the main process. Compiled
 // from .cts to .cjs: sandboxed preloads must be CommonJS.
 import { contextBridge, ipcRenderer } from "electron";
-import type { StudioApi } from "../shared/api.js";
+import type { LiveFailure, StudioApi } from "../shared/api.js";
 
 const api: StudioApi = {
   async defaultScene() {
@@ -59,6 +59,11 @@ const api: StudioApi = {
   },
   async resize(cols: number, rows: number) {
     await ipcRenderer.invoke("studio:resize", cols, rows);
+  },
+  onLiveError(handler: (failure: LiveFailure) => void) {
+    ipcRenderer.on("studio:liveError", (_event, failure: LiveFailure) => {
+      handler(failure);
+    });
   },
   async stopLive() {
     await ipcRenderer.invoke("studio:stopLive");

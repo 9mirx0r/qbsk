@@ -8,6 +8,8 @@ import { choosePainter, type Painter } from "./painter.js";
 import { showFatal, BOOT_HINT } from "./fatal.js";
 import { CRT_PRESETS, crtById } from "./glshader.js";
 import { fitFontSize, gridForBox, snapToFontGrid, CELL_ASPECT, cellAspectFor } from "./fit.js";
+import { gutterRows, selectionFor, stripText } from "../shared/marks.js";
+import type { ErrorMark } from "../shared/marks.js";
 import { FONTS, DEFAULT_FONT_ID, fontById, type FontChoice } from "./fonts.js";
 
 declare global {
@@ -47,6 +49,8 @@ if (glCanvas instanceof HTMLCanvasElement) {
 }
 el("canvas").style.display = chosen.backend === "dom" ? "" : "none";
 const editor = el("editor") as HTMLTextAreaElement;
+const gutter = el("gutter");
+const errorStrip = el("errorStrip") as HTMLButtonElement;
 const statusFile = el("stFile");
 const statusLnCol = el("stLnCol");
 const statusFps = el("stFps");
@@ -89,10 +93,14 @@ async function run(): Promise<void> {
   }
   if (!res.ok) {
     log("err", `qbsk_eval → ${res.error}`);
+    // §18 — the MCP log still gets the whole rendered error, trace included. The
+    // strip and the gutter are what the author sees without looking away from the code.
+    showError(res.errorMark);
     statusFps.textContent = "error";
     statusMs.textContent = "—";
     return;
   }
+  showError(null);
   grid.reset(res.width, res.height);
   grid.paint(res.diff);
   noteSceneSize(res.width, res.height);
@@ -462,8 +470,10 @@ async function startLive(source: string, file: string): Promise<void> {
   const res = await api.live(source, file, currentCellAspect());
   if (!res.ok) {
     log("err", res.error ?? "the scene did not start");
+    showError(res.errorMark);
     return;
   }
+  showError(null);
   liveRunning = true;
   liveFrames = 0;
   liveSize = "";
@@ -644,12 +654,19 @@ function buildSettings(): void {
 async function init(): Promise<void> {
   const dflt = await api.defaultScene();
   currentFile = dflt.file;
-  editor.value = dflt.source;
+  setEditorSource(dflt.source);
   statusFile.textContent = baseName(dflt.file);
   statusMcp.textContent = "MCP waiting";
   buildSettings();
   applyFont();
-  updateLnCol();
+  // §18 — a scene that dies mid-frame marks the line, exactly as a failed static
+  // run does. THREE paths reach the editor now; wiring only the static one left the Run
+  // button -- the one an author actually presses -- reporting nothing at all.
+  api.onLiveError((failure) => {
+    log("err", `live → ${failure.error}`);
+    showError(failure.errorMark);
+    statusFps.textContent = "error";
+  });
   api.onMirror(applyMirror);
   api.onFrame(applyFrame);
   // Apply the saved tileset at boot, like the font. Under smoke main returns no
@@ -665,6 +682,84 @@ async function init(): Promise<void> {
     text: grid.renderText(),
   });
 }
+
+
+// --- The error, on the line that caused it (docs/studio.md §18) ------------------
+
+/** The mark from the last run, or null when the last run succeeded. */
+let currentMark: ErrorMark | null = null;
+
+/**
+ * Redraws the line numbers, marking the error's lines.
+ *
+ * One row element per line rather than one text node, because the mark is a background
+ * on a row: a marker CHARACTER would shift the digits and make that one line's numbers
+ * sit a column further right than every other.
+ */
+function drawGutter(): void {
+  const rows = gutterRows(editor.value, currentMark);
+  gutter.replaceChildren();
+  for (const row of rows) {
+    const div = document.createElement("div");
+    div.textContent = String(row.line);
+    if (row.bad) {
+      div.className = "gut-bad";
+    }
+    gutter.appendChild(div);
+  }
+  gutter.scrollTop = editor.scrollTop;
+}
+
+/** Shows or clears the strip under the editor. */
+function showError(mark: ErrorMark | null): void {
+  currentMark = mark;
+  if (mark === null) {
+    errorStrip.hidden = true;
+    errorStrip.textContent = "";
+  } else {
+    errorStrip.hidden = false;
+    // textContent, not innerHTML: an error message can contain `<`, and a diagnostic
+    // that parses its own text as markup is an injection point.
+    errorStrip.textContent = stripText(mark);
+  }
+  drawGutter();
+}
+
+// Clicking the strip puts the caret on the error. The offsets are clamped inside
+// `selectionFor`, because the author can type between the run and the click.
+errorStrip.addEventListener("click", () => {
+  if (currentMark === null) {
+    return;
+  }
+  const sel = selectionFor(editor.value, currentMark);
+  editor.focus();
+  editor.setSelectionRange(sel.start, sel.end);
+  updateLnCol();
+});
+
+
+/**
+ * Puts source in the editor and brings everything that mirrors it back in step.
+ *
+ * ONE door, because assigning to `editor.value` fires NO `input` event. The gutter
+ * listens for one, so both programmatic writes in this file -- the default scene at boot
+ * and the file picker -- left the line numbers showing the previous document, and the
+ * boot case left them showing nothing at all. Fixing the two sites would have left the
+ * third to be written later; this makes the third impossible.
+ *
+ * It also clears the error mark, which belonged to the OLD source: kept, it would point
+ * a red line at whatever happens to be on that line of the new one.
+ */
+function setEditorSource(text: string): void {
+  editor.value = text;
+  showError(null);
+  updateLnCol();
+}
+
+editor.addEventListener("input", drawGutter);
+editor.addEventListener("scroll", () => {
+  gutter.scrollTop = editor.scrollTop;
+});
 
 editor.addEventListener("keyup", updateLnCol);
 editor.addEventListener("click", updateLnCol);
@@ -695,9 +790,8 @@ async function openScene(): Promise<void> {
   }
   await stopLive();
   currentFile = picked.file;
-  editor.value = picked.source;
+  setEditorSource(picked.source);
   statusFile.textContent = baseName(picked.file);
-  updateLnCol();
   log("ok", `open → ${baseName(picked.file)}`);
   // Run it: a scene that opens to a blank canvas looks like the open did not work.
   await startLive(picked.source, picked.file);
