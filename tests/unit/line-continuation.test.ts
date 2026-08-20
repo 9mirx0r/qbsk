@@ -148,15 +148,17 @@ describe("what does NOT continue", () => {
     expect(out("if true: print(\"inline\")")).toEqual(["inline"]);
   });
 
-  it("a line STARTING with an operator already continued the one above it", () => {
-    // Not introduced here, and not part of \§15.23. QBSK has no end-of-line token, so
-    // at equal indentation the expression parser has always walked straight across the
-    // break: `var c = a` then `+ b` has always been `a + b`. Pinned because the
-    // end-of-line rule has to coexist with it, and because it was undocumented until
-    // this test was written.
-    expect(out("var a = 1", "var b = 2", "var c = a", "+ b", "print(str(c))")).toEqual([
-      "3",
-    ]);
+  it("a line STARTING with an operator does not continue the one above it", () => {
+    // This test pinned the OPPOSITE when §15.23 shipped. QBSK had no end-of-line
+    // token, so at equal indentation the expression parser walked straight across the
+    // break and `var c = a` then `+ b` was `a + b`. That was an accident nobody designed
+    // and §15.25 closed it: an operator that opens a line belongs to that line.
+    //
+    // And it REPORTS rather than quietly doing nothing, which is the whole difference
+    // between a language that guesses and one that asks.
+    expect(fails("var a = 1", "var c = a", "+ b", "print(str(c))")).toContain(
+      "unexpected expression",
+    );
   });
 
   it("and it does NOT reach an indented line, which is what §15.23 changes", () => {

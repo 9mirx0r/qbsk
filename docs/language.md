@@ -2405,6 +2405,74 @@ instance field, so it dies with the interpreter that built it.
 An error in the entry file is unchanged in every respect: the entry is not in the map, so
 the formatter falls back to the source it was handed.
 
+### 15.25 A new line ends the statement before it (I2, I3)
+
+QBSK has no end-of-line token. The lexer emits `INDENT` and `DEDENT` only when the
+indentation CHANGES, so two statements at the same level arrive at the parser with nothing
+between them — and every construct that takes an OPTIONAL trailing expression read on into
+the next line. Three of them, all found by auditing §15.20 through §15.23 rather than by
+using them, and all three silently wrong:
+
+```
+func total()
+    var a = 5
+    return
+    print("unreachable")
+```
+
+`return print("unreachable")`. The line prints, and the function returns its null.
+
+```
+greet
+print("this line is mine")
+```
+
+`greet(print("this line is mine"))`. Two statements fused into one call.
+
+```
+var damage = hit
+-armour
+```
+
+`hit - armour`. And when the name on the second line is the one being declared:
+
+```
+var a = 1
+-a
+```
+
+reads as `var a = 1 - a` and reports **`variable 'a' is not defined — did you mean 'abs'?`**
+about a variable declared on the line above it. A wrong answer is bad; a wrong answer that
+explains itself confidently is worse.
+
+**A token that begins a physical line ends the statement before it.** The lexer marks the
+first token of every physical line that is not a continuation, and no construct reads
+across that mark. One rule, one mechanism, three holes closed — they were never three
+problems.
+
+The mark is NOT set when the line continues one above it, which is exactly the two cases
+§15.14 and §15.23 already defined: inside an open bracket, and after a line that ended on
+an operator. So both continuation forms are unaffected:
+
+```
+var total = 1 +
+    2                      // continues: the line above ended on `+`
+
+print(str(add(
+    1,
+    2,
+)))                        // continues: a bracket is open
+```
+
+`break` and `continue` were given this rule by hand when §15.22 added their labels, by
+comparing line numbers at the parse site. They use the mark now, because a rule stated in
+two places is a rule that will be stated differently in one of them.
+
+**This NARROWS the language**, which §17.1 otherwise forbids: three shapes that compiled
+now report. It was done deliberately and with the cost measured — no example, test or
+library in this repository uses any of the three, and none of them has an intended
+reading. `return` swallowing the line below it is not a feature anybody was using.
+
 ### 15.11 A program can raise its own error — `fail` (I2, I3)
 
 `try`/`catch` has existed since L9, and every error it ever caught came from the engine.

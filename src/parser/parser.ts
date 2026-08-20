@@ -674,7 +674,7 @@ class Parser {
         return this.parseReturn();
       case "BREAK": {
         const token = this.advance();
-        const label = this.parseLoopTarget(token);
+        const label = this.parseLoopTarget();
         return {
           kind: "BreakStmt",
           label,
@@ -683,7 +683,7 @@ class Parser {
       }
       case "CONTINUE": {
         const token = this.advance();
-        const label = this.parseLoopTarget(token);
+        const label = this.parseLoopTarget();
         return {
           kind: "ContinueStmt",
           label,
@@ -994,18 +994,19 @@ class Parser {
   /**
    * The loop a `break` or `continue` names, or null for the innermost one.
    *
-   * ANCHORED TO THE PHYSICAL LINE, which is the whole reason this is a function. QBSK
-   * has no end-of-line token, so a bare `break` followed by
+   * Anchored to the physical line: a bare `break` followed by
    *
    *     break
    *     stop = 1
    *
-   * offers the parser exactly the same tokens as `break stop`, and without the line
-   * check it would silently take `stop` as the label and then fail on the `=` with an
-   * error pointing at the wrong line entirely.
+   * offers the parser exactly the same tokens as `break stop`.
+   *
+   * This compared line NUMBERS when §15.22 was written, which was §15.25's rule
+   * stated a second way -- and a rule stated twice is a rule that will be stated
+   * differently in one of the two places.
    */
-  private parseLoopTarget(keyword: Token): string | null {
-    if (!this.checkName() || this.peek().span.start.line !== keyword.span.start.line) {
+  private parseLoopTarget(): string | null {
+    if (!this.stillThisLine() || !this.checkName()) {
       return null;
     }
     return this.nameOf(this.advance());
@@ -1182,10 +1183,30 @@ class Parser {
     };
   }
 
+  /**
+   * Is the next token part of THIS statement? (§15.25)
+   *
+   * False when it opens a physical line of its own. Every construct that takes an
+   * OPTIONAL trailing expression asks this first, because QBSK emits no end-of-line
+   * token: without it `return` swallows the line below, a parenthesis-free call fuses
+   * with the next statement, and an expression runs on into a line that starts with an
+   * operator. Three shapes, one question.
+   *
+   * The lexer does not set the mark on a line that CONTINUES one above it -- inside an
+   * open bracket (§15.14) or after a line ending on an operator (§15.23) -- so
+   * asking this never refuses a continuation.
+   */
+  private stillThisLine(): boolean {
+    return this.peek().startsLine !== true;
+  }
+
   private parseReturn(): Stmt {
     const startToken = this.advance();
     let value: Expr | null = null;
-    if (VALUE_STARTS.has(this.peek().type)) {
+    // §15.25 -- `return` on its own line returns null. It used to read the next line
+    // as its value, so a bare return ran the statement below it AND returned that
+    // statement's result.
+    if (this.stillThisLine() && VALUE_STARTS.has(this.peek().type)) {
       value = this.parseExpression(0);
     }
     return {
@@ -1802,6 +1823,9 @@ class Parser {
     }
     if (
       (expr.kind === "Ident" || expr.kind === "Member") &&
+      // §15.25 -- the argument has to be beside the name. Without this, a bare
+      // `greet` on one line took the whole statement below it as its argument.
+      this.stillThisLine() &&
       VALUE_STARTS.has(this.peek().type)
     ) {
       const arg = this.parseExpression(0);
@@ -1826,6 +1850,12 @@ class Parser {
       const token = this.peek();
       const prec = BINARY_PRECEDENCE[token.type];
       if (prec === undefined || prec < minPrec) {
+        break;
+      }
+      // §15.25 -- an operator that OPENS a line belongs to that line. `var a = 1`
+      // followed by `-a` used to read as `var a = 1 - a` and then report that `a` was
+      // not defined, about a variable declared on the line above the caret.
+      if (!this.stillThisLine()) {
         break;
       }
       this.advance();
@@ -2124,7 +2154,16 @@ class Parser {
         };
       default: {
         this.advance();
-        const msg = `unexpected expression: '${tokenLexeme(token)}'`;
+        // §15.25 — an operator that opens a line is almost always someone who meant
+        // to continue the line above it, and the fix is one character on the OTHER line.
+        // Saying only "unexpected expression: '+'" is true and leaves them staring at a
+        // line that looks perfectly reasonable.
+        const hint =
+          token.startsLine === true && BINARY_PRECEDENCE[token.type] !== undefined
+            ? ` — an operator at the start of a line does not continue the line above` +
+              `; put it at the END of that line instead`
+            : "";
+        const msg = `unexpected expression: '${tokenLexeme(token)}'${hint}`;
         this.errorAt(token, msg);
         return { kind: "ErrorExpr", message: msg, span: token.span };
       }

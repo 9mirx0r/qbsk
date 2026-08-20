@@ -112,6 +112,18 @@ export class Lexer {
   // and that surplus DEDENT closes whatever block the expression was written in. Not
   // emitting the pair is the only version of the rule that cannot leave the stack askew.
   private brackets = 0;
+  /**
+   * Where each real line began, as an index into `tokens` (§15.25).
+   *
+   * Collected during the scan and applied at the end, because `handleLineStart` runs
+   * BEFORE the line's tokens exist — what it knows is the index the first one will
+   * land at, once its own INDENT or DEDENT has been emitted.
+   *
+   * A line that continues one above it is never recorded, which is what makes §15.14
+   * and §15.23 keep working: the two places that return early below are exactly the
+   * two continuation forms.
+   */
+  private readonly lineStarts: number[] = [];
 
   constructor(source: string, file = "<stdin>") {
     this.file = file;
@@ -175,6 +187,15 @@ export class Lexer {
       value: null,
       span: this.spanAt(0),
     });
+    for (const at of this.lineStarts) {
+      const token = this.tokens[at];
+      // A line can record an index no token ever reaches — a file ending in a comment
+      // after its last statement — and the EOF is not a statement boundary anybody
+      // needs to be told about.
+      if (token !== undefined && token.type !== "EOF") {
+        token.startsLine = true;
+      }
+    }
     return this.tokens;
   }
 
@@ -232,6 +253,10 @@ export class Lexer {
         );
       }
     }
+    // §15.25 — the next token pushed opens a statement. Recorded AFTER the layout
+    // tokens above, so the mark lands on the first real token of the line rather than on
+    // an INDENT that belongs to the block, not to the line.
+    this.lineStarts.push(this.tokens.length);
     this.atLineStart = false;
   }
 

@@ -112,6 +112,18 @@ export interface Token {
   type: TokenType;
   value: TokenValue;
   span: Span;
+  /**
+   * This token opens a physical line that is NOT a continuation (§15.25).
+   *
+   * QBSK emits no end-of-line token and emits layout only when the indentation changes,
+   * so two statements at one level reach the parser with nothing between them. This is
+   * that nothing, made visible: no construct reads across a token carrying this.
+   *
+   * Absent, rather than false, on every other token — the flag is set on roughly one
+   * token per line and a property assigned to every token would change the shape of the
+   * object the whole lexer allocates.
+   */
+  startsLine?: boolean;
 }
 
 export function makeSpan(
