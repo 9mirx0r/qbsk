@@ -5,6 +5,7 @@
 // and nothing below this line knows which. `grid` keeps its name and its four methods.
 import type { MirrorEvent, SceneRun, StudioApi, StudioFrame } from "../shared/api.js";
 import { choosePainter, type Painter } from "./painter.js";
+import { showFatal, BOOT_HINT } from "./fatal.js";
 import { CRT_PRESETS, crtById } from "./glshader.js";
 import { fitFontSize, snapToFontGrid, CELL_ASPECT, cellAspectFor } from "./fit.js";
 import { FONTS, DEFAULT_FONT_ID, fontById, type FontChoice } from "./fonts.js";
@@ -667,6 +668,33 @@ el("btnBindReset").addEventListener("click", () => finishBind(DEFAULT_CONSOLE_KE
 showBind();
 el("btnPlay").addEventListener("click", () => setPlaying(!playing));
 
+// THREE HOOKS, AND THE OVERLAY IS THE POINT OF ALL THREE. A boot failure used to go to
+// `log()`, which writes into the MCP panel -- a collapsible strip inside the window. So the
+// Studio opened to a window that did nothing and said nothing, and the only diagnostic was
+// `npm run smoke` saying "no report from renderer" with no reason attached.
+//
+// The overlay goes ON the window and depends on nothing: no stylesheet, no font and no
+// class names, because the thing that failed is quite likely one of those.
+function reportFatal(title: string, err: unknown, hint?: string): void {
+  const error = err instanceof Error ? err : new Error(String(err));
+  showFatal(document, {
+    title,
+    message: error.message,
+    detail: error.stack?.split("\n").slice(1, 4).join("\n"),
+    hint,
+  });
+  log("err", `${title}: ${error.message}`);
+}
+
+// Anything that throws after the module loaded, including inside an event handler -- which
+// no `catch` around `init` can see.
+window.addEventListener("error", (event) => {
+  reportFatal("The Studio hit an error", event.error ?? event.message);
+});
+window.addEventListener("unhandledrejection", (event) => {
+  reportFatal("The Studio hit an error", event.reason);
+});
+
 void init().catch((err) => {
-  log("err", `boot failed: ${(err as Error).message}`);
+  reportFatal("The Studio could not start", err, BOOT_HINT);
 });
