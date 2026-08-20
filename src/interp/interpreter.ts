@@ -4,7 +4,7 @@ import { KEYWORDS } from "../lexer/token.js";
 import { QUEUE_LIMIT } from "../engine/keys.js";
 import type { Span } from "../lexer/token.js";
 import type { Assign, Block, EventDecl, Expr, LayerDecl, NamedArg, Program, PutStmt, SceneDecl, Stmt, UseStmt } from "../parser/ast.js";
-import { parse } from "../parser/parser.js";
+import { NAMEABLE_DSL_WORDS, parse } from "../parser/parser.js";
 import { loadQbdata } from "../parser/qbdata.js";
 import { closest } from "../util/suggest.js";
 import { Env } from "./env.js";
@@ -1514,7 +1514,14 @@ export class Interpreter {
       throw new Error("internal: module value expected");
     }
     const alias = stmt.alias ?? mod.name;
-    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(alias) || (KEYWORDS as Record<string, string>)[alias] !== undefined) {
+    // §15.15: the twenty-six scene words are contextual, so they are legal names here.
+    // This tested all fifty-one, which meant the parser accepted `use "x.qbsk" as line`
+    // and then this refused to bind it — the same rule enforced in two places, widened in
+    // only one of them.
+    const reserved =
+      (KEYWORDS as Record<string, string>)[alias] !== undefined &&
+      !NAMEABLE_DSL_WORDS.has(alias);
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(alias) || reserved) {
       this.runtime(
         `cannot bind module '${stmt.path}' as '${alias}': the module name must be a plain identifier (use 'use "..." as name')`,
         stmt.span,

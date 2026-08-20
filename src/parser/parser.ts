@@ -299,7 +299,7 @@ const CONTEXTUAL_DSL_TOKENS = new Set<TokenType>([
  * Only the first token of a statement is, and `startsAName` below settles that with one
  * token of lookahead.
  */
-const NAMEABLE_DSL_TOKENS = new Set<TokenType>([
+export const NAMEABLE_DSL_TOKENS = new Set<TokenType>([
   ...CONTEXTUAL_DSL_TOKENS,
   "SCENE",
   "LAYER",
@@ -319,6 +319,18 @@ const NAMEABLE_DSL_TOKENS = new Set<TokenType>([
   "Z",
   "VISIBLE",
 ]);
+
+/**
+ * The same twenty-six, spelled as an author writes them.
+ *
+ * Exported because the ENFORCEMENT of §15.15 lived in two places and only one of them was
+ * widened: the parser accepted `use "x.qbsk" as line` and the interpreter then refused to
+ * bind it, testing the alias against all fifty-one keywords. A rule written twice is a rule
+ * that will be wrong in one of them.
+ */
+export const NAMEABLE_DSL_WORDS: ReadonlySet<string> = new Set(
+  [...NAMEABLE_DSL_TOKENS].map((t) => KEYWORD_TO_LEXEME[t] ?? "").filter((w) => w !== ""),
+);
 
 /**
  * What can follow a scene word at STATEMENT START and make it a name rather than a
@@ -1114,11 +1126,19 @@ class Parser {
     );
     let alias: string | null = null;
     if (this.match("AS")) {
-      const aliasToken = this.expect(
-        "IDENTIFIER",
-        "expected the module name after 'as'",
-      );
-      alias = String(aliasToken.value);
+      // §15.15 counts the `use` alias among the positions a scene word may occupy, and
+      // §2.6 names it outright. This site still demanded an IDENTIFIER, so
+      // `use "x.qbsk" as line` reported while `var line = 1` compiled — the FOURTH hole of
+      // that kind, after `parseFor` binding the literal string "null" and member names
+      // after a dot. Found by enumerating every `expect("IDENTIFIER"` in this file rather
+      // than by tripping over it, which is what should have happened after the first: the
+      // only two that remain are type annotations and style names, and both are closed
+      // vocabularies rather than name positions.
+      const aliasToken = this.expectName("module name after 'as'");
+      // `nameOf` and not `String(...value)`: a scene word carries no `value`, so widening
+      // the slot above without this would have bound the literal string "null" as the
+      // alias -- exactly the defect `parseFor` had, in the very next position to be freed.
+      alias = this.nameOf(aliasToken);
     }
     return {
       kind: "UseStmt",

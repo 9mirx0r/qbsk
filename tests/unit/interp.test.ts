@@ -471,8 +471,12 @@ describe("eval: stdlib list (L3b)", () => {
   });
 
   it("slice: type error", () => {
-    expect(err('slice("abc", 1)')).toContain("'slice' expects a list");
+    // A string used to report here. §15.19 widened `slice` to cut strings too, because
+    // `[]` already indexed them and the asymmetry had no reason behind it — so what is
+    // left to refuse is a subject that is neither, and an index that is not an int.
+    expect(err("slice(7, 1)")).toContain("'slice' expects a list");
     expect(err("slice([1], 1.5)")).toContain("'slice' expects an int");
+    expect(err('slice("abc", 1.5)')).toContain("'slice' expects an int");
   });
 });
 

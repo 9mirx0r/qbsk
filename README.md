@@ -123,7 +123,7 @@ npm run studio
 | `examples/` | **46 runnable programs**, from four lines to a playable first-person demo |
 | `docs/` | the specification: `language.md`, `engine.md`, `audio.md`, `studio.md`, and `tour.md` |
 | `skills/` | **the manual — read this before writing QBSK** |
-| `tests/` | **1,893 tests green across 106 files**, with 26 byte-for-byte golden outputs |
+| `tests/` | **1,909 tests green across 107 files**, with 26 byte-for-byte golden outputs |
 | `bench/` | the performance harness and its recorded baselines |
 
 ### `skills/` is not optional reading
@@ -153,7 +153,7 @@ five checks the project holds itself to.
 The suite includes `docs-truth`, which fails when a document claims something the code does
 not do — every count and every cited path in this README is verified by it.
 
-The frozen v0.1 surface is **the 51 keywords, the 84 natives** and the scene DSL.
+The frozen v0.1 surface is **the 51 keywords, the 85 natives** and the scene DSL.
 `docs/language.md` §17 says exactly what that promise covers and what it does not.
 
 ---

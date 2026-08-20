@@ -33,7 +33,7 @@ const FROZEN_KEYWORDS = [
   "export", "as", "try", "catch", "true", "false", "null",
 ];
 
-/** The 84 natives of §17.1. Adding is not breaking; removing or renaming is. */
+/** The 85 natives of §17.1. Adding is not breaking; removing or renaming is. */
 const FROZEN_NATIVES = [
   // core
   "print", "len", "type", "str", "int", "float", "bool", "clock", "gameTime", "args", "exit",
@@ -47,6 +47,9 @@ const FROZEN_NATIVES = [
   "has", "find", "without",
   // math
   "abs", "sqrt", "exp", "log", "min", "max", "round", "floor", "ceil", "sin", "cos", "tan",
+  // §15.19 — a number with a fixed number of decimals. Added because every line that
+  // wanted three of them wrote `str(int(x * 1000.0))`, which truncates.
+  "format",
   "atan2", "pi",
   "random",
   // seeded rng

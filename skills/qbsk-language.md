@@ -170,7 +170,7 @@ to ignore it.
 - Operators: arithmetic, comparison, `and/or/not` (short-circuit), concat `+`,
   repetition `*` (**strings only** — `[1, 2] * 3` is `cannot multiply 'list' by 'int'`),
   bitwise `& | ^ << >>` (ints only, L4), range `0..10` exclusive in `for`.
-- `natives.ts` (host↔QBSK bridge). **84 natives are registered.** Verify the live list
+- `natives.ts` (host↔QBSK bridge). **85 natives are registered.** Verify the live list
   rather than trusting any written copy of it, including this one:
 
   ```bash
@@ -358,7 +358,7 @@ alias. `use "x.qbsk" as line` does not parse.
    every benchmark still RUNNING, never on absolute milliseconds.
 5. If a change breaks an example in `examples/`, the PR is not accepted until fixed.
 
-Current baseline to beat, not to match: **106 test files / 1,893 tests, all green.** If the
+Current baseline to beat, not to match: **107 test files / 1,909 tests, all green.** If the
 count drops, find out which test was deleted before anything else.
 
 ## 10. Forbidden anti-patterns
@@ -388,7 +388,7 @@ count drops, find out which test was deleted before anything else.
 7. Report: what was done, what remains pending, and the next logical step.
 
 **Verify, do not trust — including this file.** Every factual claim here was wrong once:
-this skill has previously stated that there were 16 natives (there are 84), that `animate`
+this skill has previously stated that there were 16 natives (there are 85), that `animate`
 did not exist (it does), that `sprinkle` was a live ghost (it was removed), and that
 modules shared the top-level scope (they have not since L5). If a claim here matters to
 your task, check it against the code before relying on it, and correct this file when it

@@ -359,6 +359,7 @@ match (explicit coercion, never a raw JS throw).
 | `min(a, b)` | `int`/`float` | the smaller of two numbers (float if either is) |
 | `max(a, b)` | `int`/`float` | the larger of two numbers (float if either is) |
 | `round(n)` | `int` | rounding to the nearest integer (`.5` rounds up) |
+| `format(n, places)` | `str` | a number with a fixed number of decimals, ROUNDED — `format(0.0006, 3)` is `"0.001"`. 0 to 12 places; anything else reports (§15.19) |
 | `floor(n)` | `int` | rounds down |
 | `ceil(n)` | `int` | rounds up |
 | `sqrt(n)` | `float` | square root; negative `n` → runtime error with span |
@@ -657,7 +658,7 @@ is an error, and a repetition that would build something enormous reports instea
 exhausting memory (§15.4). The resulting list is a new list — mutating it does not touch
 the original.
 
-**`gameTime()` is the one native in camelCase**, among 84. It is deliberate and it stays:
+**`gameTime()` is the one native in camelCase**, among 85. It is deliberate and it stays:
 the name comes from the engine's frame clock (`docs/engine.md` §7), not from the stdlib,
 and it reads as one word for the same reason `SIGWINCH` does. Renaming it to `game_time`
 would be a breaking change across 141 call sites for a purely cosmetic gain, and adding
@@ -2084,6 +2085,35 @@ what a working program does, which is the same argument §15.15 made for the sce
 it as an operator is a grammar change rather than an addition, and §17.1 promises the
 grammar. A native says the same thing and costs nothing to keep true.
 
+### 15.19 `slice` cuts strings, and `format` writes a number the way you meant it
+
+Two ergonomics the language was missing, both found by writing a lot of QBSK rather than by
+reading the spec.
+
+**`slice` was list-only while `[]` indexed strings.** So `s[3]` answered and
+`slice(s, 0, 3)` reported `'slice' expects a list, got 'str'` — an asymmetry with no reason
+behind it, and the workaround was a `while` loop concatenating one character at a time. It
+takes a string now, with the same clamping the list form has: out-of-range ends are pulled
+in rather than reported, because a substring that runs off the end is a normal thing to ask
+for and an error there would be pedantry.
+
+**`format(x, places)` writes a fixed number of decimals.** Without it, every line that
+wanted three decimals wrote `str(int(x * 1000.0))` and then had no way to put the point
+back. That appears about a hundred times across one codebase's tests and log lines, and it
+is wrong twice over: `int` truncates rather than rounds, so `0.0006` printed as `0` and
+`2.9999` as `2999`.
+
+```qbsk
+format(3.14159, 2)      // "3.14"
+format(2.0, 3)          // "2.000"
+format(0.0006, 3)       // "0.001"   — rounded, not truncated
+format(7, 2)            // "7.00"    — an int is a number too
+```
+
+Neither is a §17.1 break. `format` is new, and adding is not breaking. `slice` on a string
+used to REPORT, so no program that ran can tell the difference — the same argument §15.18
+made for `contains` and §15.15 made for the scene words.
+
 ### 15.11 A program can raise its own error — `fail` (I2, I3)
 
 `try`/`catch` has existed since L9, and every error it ever caught came from the engine.
@@ -2233,7 +2263,7 @@ Within `0.x`, none of the following changes in a way that breaks a program that 
 | **Operator meaning** | precedence (§4), `/` always returning float (§5.0), sequence repetition (§6.7), tuple arithmetic |
 | **The error model** | every error carries span + fragment; suggestions where the valid set is known (§8.1) |
 | **`.qba` and `.qbdata`** | the file formats, including which META keys exist (§15.9, §12) |
-| **The 84 natives** | a native is not removed or given different semantics; see the exception below |
+| **The 85 natives** | a native is not removed or given different semantics; see the exception below |
 | **CLI surface** | `run`, `repl`, `lex`, `parse`, `check`, `profile`, `fmt`; `--ansi`, `--loop`, `--fps`, `--frames`, `--no-audio`, `--help`, `--version` |
 
 **Adding is not breaking.** New natives, new primitives, new stdlib functions and new
@@ -2267,7 +2297,7 @@ user can hit, all of them documented and none of them scheduled:
   a grid engine's coordinates, turns and seeds live far below the line.
 - **`for` over a float range rounds inward** (§5.0) — the one place a float is quietly
   accepted where an int is meant.
-- **`gameTime()` is the sole camelCase native** among 84 (§6.7). Kept on purpose; the
+- **`gameTime()` is the sole camelCase native** among 85 (§6.7). Kept on purpose; the
   alternative was 141 breaking call sites for a cosmetic gain.
 - **`--tokens` and `--ast` are accepted and inert.** `lex` and `parse` print
   unconditionally. Documented in §9; the flags are kept so existing invocations do not

@@ -1754,6 +1754,34 @@ export function createNatives(io: HostIO, opts: NativeOptions = {}): Env {
     return acc;
   });
 
+  /**
+   * `format(x, places)` — a number with a fixed number of decimals (§15.19).
+   *
+   * Without it every line that wanted three decimals wrote `str(int(x * 1000.0))` and then
+   * had no way to put the point back. That shape appears about a hundred times across one
+   * codebase, and it is wrong twice over: `int` TRUNCATES, so 0.0006 printed as 0 and
+   * 2.9999 as 2999. This rounds.
+   */
+  const MAX_PLACES = 12;
+  native("format", (args, span) => {
+    expectArgs("format", args, 2, span);
+    const value = args[0]!;
+    if (value.type !== "int" && value.type !== "float") {
+      throw new QbskRuntimeError(
+        `'format' formats a number, got '${typeName(value)}'`,
+        span,
+      );
+    }
+    const places = expectInt("format", args[1]!, span);
+    if (places < 0 || places > MAX_PLACES) {
+      throw new QbskRuntimeError(
+        `'format' takes 0 to ${MAX_PLACES} decimal places, got ${places}`,
+        span,
+      );
+    }
+    return { type: "str", value: value.value.toFixed(places) };
+  });
+
   native("slice", (args, span) => {
     if (args.length !== 2 && args.length !== 3) {
       throw new QbskRuntimeError(
@@ -1761,7 +1789,22 @@ export function createNatives(io: HostIO, opts: NativeOptions = {}): Env {
         span,
       );
     }
-    const l = expectList("slice", args[0]!, span);
+    // §15.19 — a string or a list. It was list-only while `[]` already indexed strings,
+    // an asymmetry with no reason behind it whose workaround was a `while` loop
+    // concatenating one character at a time. A string used to REPORT here, so widening it
+    // cannot change what any working program does.
+    const subject = args[0]!;
+    if (subject.type === "str") {
+      const text = subject.value;
+      const from = expectInt("slice", args[1]!, span);
+      const to = args.length === 3 ? expectInt("slice", args[2]!, span) : text.length;
+      // Clamped, like the list form: a substring that runs off the end is a normal thing
+      // to ask for and an error there would be pedantry.
+      const a = Math.max(0, Math.min(text.length, from));
+      const b = Math.max(a, Math.min(text.length, to));
+      return { type: "str", value: text.slice(a, b) };
+    }
+    const l = expectList("slice", subject, span);
     const from = expectInt("slice", args[1]!, span);
     const to =
       args.length === 3 ? expectInt("slice", args[2]!, span) : l.items.length;

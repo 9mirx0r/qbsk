@@ -317,3 +317,35 @@ describe("the DSL keeps every diagnostic it had", () => {
     expect(r.canvas!.renderText().split(NL)[1]).not.toBe("......");
   });
 });
+
+describe("the `use` alias is a name position too (§2.6, §15.15)", () => {
+  // The FOURTH hole of the same kind, after `parseFor` binding the literal string "null"
+  // and member names after a dot. §2.6 named the `use` alias among the positions a scene
+  // word may occupy and `parser.ts` still demanded an IDENTIFIER, so the spec promised
+  // something the parser refused.
+  //
+  // Found by enumerating every `expect("IDENTIFIER"` in the parser rather than by tripping
+  // over it, which is what should have happened after the first one. The enumeration is
+  // complete: the only sites left are type annotations and style names, and both are
+  // closed vocabularies rather than name positions.
+  it("takes every scene word as a module alias, and calls through it", () => {
+    for (const word of ALL_SCENE_WORDS) {
+      expect(
+        out(`use "lib/for-names.qbsk" as ${word}`, `print(str(${word}.at()))`),
+        word,
+      ).toEqual(["7"]);
+    }
+  });
+
+  it("binds the alias to its own spelling, not to the string \"null\"", () => {
+    // The trap `parseFor` fell into: widening the slot without widening how the name is
+    // READ binds a keyword token's absent `value`.
+    expect(out('use "lib/for-names.qbsk" as line', "print(str(line.line()))")).toEqual(["7"]);
+  });
+
+  it("still refuses a core keyword there, and says why", () => {
+    const r = parse('use "lib/for-names.qbsk" as return', "t.qbsk");
+    expect(r.errors.length).toBeGreaterThan(0);
+    expect(r.errors[0]!.message).toContain("reserved keyword");
+  });
+});
