@@ -393,7 +393,26 @@ function spanFrom(file: string, start: Token, end: Token): Span {
   return makeSpan(file, start.span.start, end.span.end);
 }
 
-export function parse(source: string, file: string): ParseResult {
+/** How the source in front of the parser is meant to be read (§15.26). */
+export interface ParseOptions {
+  /**
+   * This is a SNIPPET: one line typed at a console, whose value is the answer.
+   *
+   * §15.26 refuses a statement that computes a value and drops it, and in a program
+   * that is always a mistake. At a REPL it is the entire point — `1 + 1` typed into
+   * the engine console means "show me two", and `player.health` means "show me". The two
+   * contexts are genuinely different and the parser has to be told which it is in; the
+   * alternative found in the first version of this rule was `qbsk_eval` refusing every
+   * expression an agent asked it to evaluate.
+   */
+  snippet?: boolean;
+}
+
+export function parse(
+  source: string,
+  file: string,
+  options: ParseOptions = {},
+): ParseResult {
   let tokens: Token[];
   try {
     tokens = tokenize(source, file);
@@ -411,8 +430,26 @@ export function parse(source: string, file: string): ParseResult {
     }
     throw err;
   }
-  const parser = new Parser(tokens, file);
+  const parser = new Parser(tokens, file, options.snippet === true);
   return parser.parseProgram();
+}
+
+/**
+ * What to say about a line that computes a value and does nothing with it (§15.26).
+ *
+ * A bare NAME gets a different message from bare arithmetic, because a name has two
+ * common readings -- a call somebody forgot the parentheses on, and a value somebody
+ * forgot to assign -- and the caret cannot tell them apart. It offers both rather than
+ * guessing, which is the same instinct as the key-name suggestions in the analyzer.
+ */
+function droppedValueMessage(expr: Expr): string {
+  if (expr.kind === "Ident" || expr.kind === "Member") {
+    return (
+      `'${expr.name}' on its own line does nothing — to call it write ` +
+      `'${expr.name}()', to keep its value write 'var x = ${expr.name}'`
+    );
+  }
+  return "this line computes a value and does nothing with it";
 }
 
 class Parser {
@@ -423,6 +460,8 @@ class Parser {
   constructor(
     private readonly tokens: Token[],
     private readonly file: string,
+    /** §15.26 — a REPL line's value is its answer, so it is not a dropped value. */
+    private readonly snippet = false,
   ) {}
 
   private peek(offset = 0): Token {
@@ -1837,10 +1876,29 @@ class Parser {
         span: makeSpan(this.file, startToken.span.start, this.previous().span.end),
       };
     }
+    // §15.26 -- a bare expression statement has to be a CALL. Anything else computes
+    // a value and drops it, which is invariant I2 broken at the most ordinary place in
+    // the grammar: `1 + 1` on a line of its own ran and did exactly as much as a blank
+    // line. It is also where §15.25 lands the lines it stopped swallowing, and moving
+    // a defect from WRONG to SILENT is only half the distance worth travelling.
+    //
+    // A call is exempt because a call can be the point: `push(xs, 1)` returns something
+    // nobody wants, and refusing it would mean writing `var ignored = push(xs, 1)` -- a
+    // name invented to be unread, the same defect wearing a hat.
+    //
+    // `ErrorExpr` is exempt too: it has already reported, and a second message about the
+    // same line buries the first.
+    const span = spanFrom(this.file, startToken, this.previous());
+    if (!this.snippet && expr.kind !== "Call" && expr.kind !== "ErrorExpr") {
+      // Reported against the WHOLE statement, not its first token: the caret under
+      // `1 + 1` should cover `1 + 1`. `errorAt` takes a token and would underline the
+      // first `1`, which points at the part of the line that is least wrong.
+      this.errors.push(new QbskSyntaxError(droppedValueMessage(expr), span));
+    }
     return {
       kind: "ExprStmt",
       expr,
-      span: spanFrom(this.file, startToken, this.previous()),
+      span,
     };
   }
 

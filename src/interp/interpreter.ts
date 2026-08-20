@@ -427,7 +427,9 @@ export class SceneProgram {
       this.staticLayerCache.invalidate();
       this.interp.invalidateStaticLayers();
     }
-    const parsed = parse(source, file);
+    // §15.26 — a snippet is an EXPRESSION context: `1 + 1` typed at the console
+    // means "show me two", and its value is the answer rather than a value dropped.
+    const parsed = parse(source, file, { snippet: true });
     if (parsed.errors.length > 0) {
       return {
         out,

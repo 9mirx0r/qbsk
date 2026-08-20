@@ -60,16 +60,18 @@ describe("a bare return does not swallow the line below it", () => {
 
 describe("a call without parentheses does not swallow the line below it", () => {
   it("does not fuse two statements into one call", () => {
-    // Was `greet(print("mine"))`: the print ran first and greet received its null.
-    expect(
-      out(
-        "func greet(x)",
-        "    print(\"greet got: \" + str(x))",
-        "    return 0",
-        "greet",
-        "print(\"mine\")",
-      ),
-    ).toEqual(["mine"]);
+    // Was `greet(print("mine"))`: the print ran first and greet received its null. The
+    // bare `greet` is now reported by §15.26 rather than run, which is the answer to
+    // both halves -- it was never a statement.
+    const e = fails(
+      "func greet(x)",
+      "    print(\"greet got: \" + str(x))",
+      "    return 0",
+      "greet",
+      "print(\"mine\")",
+    );
+    expect(e).toContain("'greet' on its own line does nothing");
+    expect(e).not.toContain("greet got:");
   });
 
   it("still calls without parentheses on one line", () => {
@@ -88,9 +90,11 @@ describe("an expression does not continue onto a line that starts one", () => {
 
   it("does not report about a variable declared on the line above", () => {
     // `var a = 1` then `-a` read as `var a = 1 - a` and reported
-    // `variable 'a' is not defined — did you mean 'abs'?` about `a` itself.
-    const printed = out("var a = 1", "-a", "print(str(a))");
-    expect(printed).toEqual(["1"]);
+    // `variable 'a' is not defined — did you mean 'abs'?` about `a` itself. It is a
+    // statement of its own now, and §15.26 says the true thing about it.
+    const e = fails("var a = 1", "-a", "print(str(a))");
+    expect(e).toContain("computes a value and does nothing with it");
+    expect(e).not.toContain("is not defined");
   });
 
   it("still continues when the line above ends on an operator", () => {

@@ -2473,6 +2473,60 @@ now report. It was done deliberately and with the cost measured — no example, 
 library in this repository uses any of the three, and none of them has an intended
 reading. `return` swallowing the line below it is not a feature anybody was using.
 
+### 15.26 A line that computes a value must do something with it (I2)
+
+`1 + 1` on a line of its own was accepted, evaluated, and thrown away. So was `x`, and
+`xs[0]`, and `player.health`. The program ran, printed nothing, reported nothing, and did
+exactly as much as a blank line.
+
+That is invariant **I2** — *every value a construct evaluates is used or reported* —
+broken at the most ordinary place in the grammar. §14 and §15 spent nineteen sections
+removing constructs that parse, run and do nothing, while the statement form that does it
+most easily sat unexamined.
+
+It is also where §15.25 lands the lines it no longer swallows. `-armour` written under
+`var damage = hit` used to be a subtraction; once the statement boundary closed, it became
+a value computed and dropped — an improvement from *wrong* to *silent*, which is only half
+the distance worth travelling.
+
+**A statement that is a bare expression must be a CALL.** Everything else reports:
+
+```
+t.qbsk:2:1 — parse: this line computes a value and does nothing with it
+  |
+2 | 1 + 1
+  | ^^^^^
+```
+
+A call is exempt because a call can be the point. `push(xs, 1)`, `print(name)` and
+`fail("...")` all return something nobody wants, and refusing them would mean writing
+`var ignored = push(xs, 1)` — a name invented to be unread, which is the same defect
+wearing a hat.
+
+A name on its own gets the message it needs, which is a different one:
+
+```
+t.qbsk:4:1 — parse: 'greet' on its own line does nothing — to call it write 'greet()',
+to keep its value write 'var x = greet'
+```
+
+Both readings are common and the caret cannot tell them apart, so the error offers both
+rather than guessing.
+
+**A SNIPPET is exempt, and finding out why is the interesting part.** The first version of
+this rule broke `qbsk_eval`: an agent asking the Studio to evaluate `1 + 1` got a syntax
+error saying its expression did nothing with its value. At a console the value IS the
+answer — `player.health` typed into the engine console means *show me* — so a REPL
+line is an expression context and a program is a statement context. They are genuinely
+different and the parser has to be told which it is in, which is what `ParseOptions.snippet`
+is for. It was found by a test, not by thinking: `studio-mcp.test.ts` had asserted since it
+was written that a snippet returns both its value and its print.
+
+**This narrows the language**, and the whole cost was measured before it was done: no
+example, test, golden or library in this repository contains such a line. There is no
+program that wants one — a value computed and discarded is either a typo or an unfinished
+edit, and both are better found by the compiler than by wondering why nothing happened.
+
 ### 15.11 A program can raise its own error — `fail` (I2, I3)
 
 `try`/`catch` has existed since L9, and every error it ever caught came from the engine.
