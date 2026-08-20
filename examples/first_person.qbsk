@@ -1,0 +1,198 @@
+// first_person.qbsk — a corridor seen from inside it, one turn at a time.
+//
+// The engine casts (§11.21) and QBSK draws. `raycast` returns a wall per screen column
+// and everything below — the height falloff, the distance ramp, the darker face on one
+// side — is written here, because a `line` and a ramp lookup are things the language
+// already says. The native exists for the DDA alone.
+//
+// TURN-BASED, not free-look. A key press moves or turns exactly one step and calls
+// `advance()`; nothing moves between presses. A turn is not a frame (§12), and this is
+// the shape the combatant game asks for: you look, you decide, you act.
+//
+//   qbsk run --ansi --loop examples/first_person.qbsk --fps 20
+
+use "lib/firstperson.qbsk" as fp
+
+const W = 96
+const H = 32
+const HORIZON = H / 2
+
+// `#` is stone, `+` is a barred gate. Both stop a ray; the ramp tells them apart by the
+// glyph the caster hands back, so a gate reads as a gate without a second cast.
+const MAP = [
+    "################",
+    "#..............#",
+    "#..####..####..#",
+    "#..#........#..#",
+    "#..#..####..#..#",
+    "#.....#..#.....#",
+    "#..####..####..#",
+    "#..............#",
+    "#..+++....+++..#",
+    "#..............#",
+    "################",
+]
+
+// Six steps of depth. Near walls are solid, far ones dissolve — the same idea as the
+// density ramp (§11.4), applied to distance instead of to luminance.
+const NEAR = ["█", "▓", "▒", "░", "·", " "]
+
+var eye = {"x": 1.5, "y": 1.5, "angle": 0.0}
+
+// Two of them, standing still. Movement is F5's next question; being SEEN correctly —
+// at the right column, at the right size, and behind the right walls — is this one.
+// `spawn` is what makes these ENTITIES rather than dicts: it adds a stable `id` that
+// survives every turn that moves them (§12.2). The dicts themselves are mutated in place
+// on each turn — dicts mutate per key while lists are index-immutable, so rebuilding the
+// list would be the awkward way round.
+var guards = [
+    spawn({"x": 8.5, "y": 1.5, "face": "╠", "color": "bright-red"}),
+    spawn({"x": 13.5, "y": 7.5, "face": "║", "color": "bright-green"}),
+]
+var steps = 0
+var bumped = false
+
+// Where a step of `dist` from the eye would land, given the current facing.
+func ahead(dist)
+    return [eye["x"] + cos(eye["angle"]) * dist, eye["y"] + sin(eye["angle"]) * dist]
+
+func solid(x, y)
+    var col = int(x)
+    var row = int(y)
+    if row < 0 or row >= len(MAP)
+        return true
+    if col < 0 or col >= len(MAP[row])
+        return true
+    return MAP[row][col] != "."
+
+// One step forward or back, refused when a wall is in the way. Refusing rather than
+// sliding is deliberate: in a turn-based game a move that half-happens is a move the
+// player cannot plan around.
+// Manhattan tiles between a guard and the eye. Tile distance, not the perpendicular
+// depth the billboards use: this answers "can it reach me", which is a question about
+// the grid, while depth answers "how big does it draw".
+func gap_of(who)
+    return abs(int(who["x"]) - int(eye["x"])) + abs(int(who["y"]) - int(eye["y"]))
+
+func closest_gap()
+    var closest = 99
+    for g in 0..len(guards)
+        var gap = gap_of(guards[g])
+        if gap < closest
+            closest = gap
+    return closest
+
+func step_by(dist)
+    var dest = ahead(dist)
+    if solid(dest[0], dest[1])
+        bumped = true
+    else
+        eye["x"] = dest[0]
+        eye["y"] = dest[1]
+        bumped = false
+        steps += 1
+    advance()
+
+var near = closest_gap()
+
+on key "arrow-up"
+    step_by(1.0)
+on key "arrow-down"
+    step_by(-1.0)
+on key "arrow-left"
+    eye["angle"] = eye["angle"] - pi() / 4.0
+    advance()
+on key "arrow-right"
+    eye["angle"] = eye["angle"] + pi() / 4.0
+    advance()
+// One step per guard per turn, along the shortest route to the eye.
+//
+// A guard stops when it is ADJACENT rather than stepping onto the player. Sharing the
+// eye's tile puts a body at distance zero, which the height clamp renders as a wall of
+// glyphs across the whole frame — the first thing a naive `path` step does, and it looks
+// like a crash rather than like a guard.
+on turn(n)
+    for g in 0..len(guards)
+        var who = guards[g]
+        if gap_of(who) > 1
+            var route = path(MAP, (int(who["x"]), int(who["y"])), (int(eye["x"]), int(eye["y"])), "#+", false)
+            // `len(route) > 2` and not `> 1`: a route of two is guard-then-player, so its
+            // second entry IS the player's tile. Stepping there is the overlap this guards
+            // against, and `> 1` is the off-by-one that allows it.
+            if len(route) > 2
+                var hop = route[1]
+                who["x"] = float(hop[0]) + 0.5
+                who["y"] = float(hop[1]) + 0.5
+    near = closest_gap()
+
+// Waiting is a move. A turn-based game without one forces the player to walk into a wall
+// to pass a turn, which is what `bumped` was quietly being used for.
+on key "space"
+    bumped = false
+    advance()
+
+on key "q"
+    exit(0)
+
+scene FirstPerson(width: W, height: H + 3, title: "Kúlatho-Surún", fps: 20)
+
+// The corridor. One cast per frame, one column per screen column.
+layer walls z: 0
+    var view = raycast(MAP, eye, W, 24.0, "#+")
+    for col in 0..W
+        var hit = view[col]
+        if hit[3]
+            // Height falls as 1/distance, which is what makes the corridor recede. The
+            // +0.1 keeps a wall pressed against the eye from dividing by zero.
+            var h = int(HORIZON / (hit[0] + 0.1))
+            if h > HORIZON
+                h = int(HORIZON)
+            var top = int(HORIZON - h)
+            var depth = int(hit[0] / 4.0)
+            if depth > 5
+                depth = 5
+            // The east-west faces go one step darker. That single difference is what
+            // makes a corner legible with no lighting model at all.
+            var ink = NEAR[depth]
+            if hit[1] == "y" and depth < 5
+                ink = NEAR[depth + 1]
+            for row in 0..(h * 2)
+                put ink at (col, top + row)
+
+// The guards, drawn between the walls and the floor because a wall nearer than a guard
+// must cover it. `view` is cast again here rather than passed down: a layer cannot read
+// another layer's locals, and re-casting is honest about the cost (§11.19's cache is what
+// makes it cheap when nothing moved).
+layer figures z: 1
+    var seen = raycast(MAP, eye, W, 24.0, "#+")
+    for g in 0..len(guards)
+        var who = guards[g]
+        var spot = fp.billboard(eye, who["x"], who["y"], W, 60.0)
+        if spot[2]
+            var gh = fp.column_height(HORIZON, spot[1])
+            var top = int(HORIZON) - int(gh / 2)
+            color fg: who["color"]
+            // Occlusion is decided PER COLUMN, not once for the whole figure. A guard
+            // stepping out from behind a pillar is half hidden for a moment, and a
+            // single test against the centre column would pop the whole body in at once.
+            for w in 0..gh
+                var col = spot[0] + w - int(gh / 2)
+                if col >= 0 and col < W
+                    var wall = seen[col]
+                    if not (wall[3] and fp.hidden(spot[1], wall[0]))
+                        for row in 0..gh
+                            put who["face"] at (col, top + row)
+
+layer floor z: 2
+    color fg: bright-black
+    for col in 0..W
+        put "·" at (col, H - 1)
+
+layer hud z: 3
+    color fg: bright-yellow
+    put "turn " + str(turn()) + "   steps " + str(steps) + "   near " + str(near) at (2, H)
+    color fg: bright-black
+    put "arrows move · space waits · q leaves · guards " + str(guards[0]["id"]) + "," + str(guards[1]["id"]) at (2, H + 1)
+    color fg: bright-red
+    visible: bumped
+    put "stone." at (W - 10, H)

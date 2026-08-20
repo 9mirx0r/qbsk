@@ -1,0 +1,26 @@
+node_modules/
+dist/
+dist-studio/
+*.log
+.DS_Store
+
+# Scratch local: loose test files in the repo root (do not version)
+/t.qb
+/scratch.qb
+/tmp.qb
+
+# Machine-local agent config (per-machine permissions, not project-wide)
+.claude/settings.local.json
+
+# Session mirror journal (docs/studio.md 12): runtime artifact, not source
+.qbsk-studio/
+
+# Phase 32: qbsk_generate_sprite's live output (AI-driven, ad-hoc, seed/size-named) —
+# runtime artifact, not source. The one canonical demo asset
+# (examples/res/pixelart_creature.qbdata + examples/res/sprites/creature.svg) is
+# committed separately and is not affected by this.
+examples/res/generated/
+
+# L1 persistence (docs/language.md §13.5): save slots written by running examples —
+# runtime artifact, not source
+examples/saves/

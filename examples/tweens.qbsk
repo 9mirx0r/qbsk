@@ -1,0 +1,56 @@
+// tweens.qbsk — the six easing curves, side by side (docs/engine.md §11).
+//
+// Each row runs the SAME animation with a different curve, so the difference is
+// the curve and nothing else. Watch the right edge: linear arrives steadily,
+// ease-out sprints then coasts, bounce lands and rebounds, elastic overshoots.
+//
+//   qbsk run --ansi --loop examples/tweens.qbsk --fps 30
+//
+// Note `round(...)`, not `int(...)`. A tween returns a float and the canvas takes
+// integer cells; rounding centres the cell, which keeps the motion even and keeps
+// float noise away from the decision boundary (docs/engine.md §11.3).
+scene Tweens(width: 62, height: 17)
+
+const A = 8.0
+const B = 54.0
+const D = 2.5
+
+layer bg z: 0
+    color bg: black fg: bright-black
+    fill " "
+    border (0, 0) to (61, 16) style: double
+    put " easings " at (26, 0)
+    put "start" at (6, 15)
+    put "end" at (52, 15)
+
+layer rails z: 1
+    color fg: bright-black
+    put "..............................................." at (7, 2)
+    put "..............................................." at (7, 4)
+    put "..............................................." at (7, 6)
+    put "..............................................." at (7, 8)
+    put "..............................................." at (7, 10)
+    put "..............................................." at (7, 12)
+
+layer labels z: 2
+    color fg: bright-black
+    put "linear" at (1, 2)
+    put "in" at (1, 4)
+    put "out" at (1, 6)
+    put "inout" at (1, 8)
+    put "bounce" at (1, 10)
+    put "elast" at (1, 12)
+
+layer movers z: 3
+    color fg: bright-cyan
+    put "O" at (round(animate("a", A, B, D, "linear")), 2)
+    color fg: bright-green
+    put "O" at (round(animate("b", A, B, D, "ease-in")), 4)
+    color fg: bright-yellow
+    put "O" at (round(animate("c", A, B, D, "ease-out")), 6)
+    color fg: bright-magenta
+    put "O" at (round(animate("d", A, B, D, "ease-in-out")), 8)
+    color fg: bright-red
+    put "O" at (round(animate("e", A, B, D, "bounce")), 10)
+    color fg: bright-white
+    put "O" at (round(animate("f", A, B, D, "elastic")), 12)

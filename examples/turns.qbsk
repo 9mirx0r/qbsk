@@ -1,0 +1,244 @@
+// turns.qbsk — the world moves when you do.
+//
+// This is the first QBSK program that is a GAME rather than an animation. Everything
+// before it was a pure function of `gameTime()`: press nothing and it still moves.
+// Here nothing happens until you act, and then everything happens at once.
+//
+// Two clocks (docs/engine.md §12). The torch flickers on `gameTime()` because seconds
+// are passing. The goblins move on `turn()` because you moved. Stand still and the
+// torch keeps guttering while the goblins stay exactly where they are — that difference
+// IS the phase.
+//
+// The goblins start behind a wall with ONE door. Watch them file through it: that is
+// A* over the map (docs/engine.md §13), not a straight line, and it is the difference
+// between a demo and a game.
+//
+//   arrows  move (costs a turn)      .  wait one turn
+//   i       look at your pack (free — opening a bag is not an action)
+//   qbsk run --ansi --loop examples/turns.qbsk --fps 20
+scene Turns(width: 60, height: 20)
+
+// The map IS the room: pathfinding reads the same rows the player sees, so a wall
+// on screen is a wall to walk around and there is no second structure to keep in step
+// (docs/engine.md §13.1).
+const MAP = [
+    "############################################################",
+    "#.............................#............................#",
+    "#.............................#............................#",
+    "#.................#...........#............................#",
+    "#.................#...........#............................#",
+    "#.................#...........#.........##########.........#",
+    "#.................#...........#............................#",
+    "#.................#...........#............................#",
+    "#.................#...........#............................#",
+    "#.............................#............................#",
+    "#.............................#............................#",
+    "#..........................................................#",
+    "#.............................#.........##########.........#",
+    "#.............................#............................#",
+    "#.............................#............................#",
+    "#.............................#............................#",
+    "############################################################"
+]
+
+var playerX = 8
+var playerY = 8
+var pack = false
+var log = "you are in a dark room."
+
+// What the player can see from where they stand (docs/engine.md §14). Recomputed
+// when they MOVE, not every frame: it is a function of position and the map, and the
+// map does not change sixty times a second. The mask is shaped like the map, so a
+// lookup is one index.
+var seen = []
+var memory = []
+
+// Entities are ordinary dicts and live in a plain list — measured, not assumed
+// (bench/entities.md): 2000 of them step in under 5 ms, and a turn is not a frame.
+var goblins = []
+
+// The bestiary is a DATA file: it holds literals and cannot run (docs/language.md §12).
+// Its shape is checked when it loads, so a misspelled key reports at its own line
+// instead of three turns later in whatever went looking for it.
+use "res/bestiary.qbdata" as bestiary
+
+func place(kind, x, y)
+    // The entry is an ordinary dict, so it goes straight into spawn with the position
+    // merged in — no conversion, and nothing to keep in step with the data file.
+    return spawn({
+        "kind": kind["kind"], "glyph": kind["glyph"], "hp": kind["hp"],
+        "sight": kind["sight"], "x": x, "y": y,
+    })
+
+on start
+    goblins = push(goblins, place(bestiary.GOBLIN, 38, 3))
+    goblins = push(goblins, place(bestiary.OGRE, 52, 8))
+    goblins = push(goblins, place(bestiary.RAT, 45, 14))
+    goblins = push(goblins, place(bestiary.RAT, 50, 2))
+
+// Blank memory the same shape as the map, then the first look. AT THE TOP LEVEL and
+// not in `on start`: the scene block composes once at startup, before any handler
+// has run (docs/language.md §7.7), so a layer that reads these needs them to be real
+// already. Doing it in `on start` cost one 'index 0 out of range' before this note.
+for mapRow in MAP
+    memory = push(memory, " " * len(mapRow))
+
+// Movement costs a turn. This is the whole design: the handler changes the world and
+// then says so, instead of the world advancing on a timer behind its back.
+func walkable(x, y)
+    if y < 0
+        return false
+    if y >= len(MAP)
+        return false
+    var row = MAP[y]
+    if x < 0
+        return false
+    if x >= len(row)
+        return false
+    return row[x] != "#"
+
+func look()
+    seen = sight(MAP, (playerX, playerY), 11, "#")
+    // What you have SEEN stays drawn once you leave it — the remembered map every
+    // roguelike keeps. The engine answers “visible now”; remembering is the game's
+    // job, and it is a dozen lines.
+    var next = []
+    for y, mapRow in MAP
+        var row = ""
+        for x in 0..len(mapRow)
+            if seen[y][x] == "." or memory[y][x] == "."
+                row = row + "."
+            else
+                row = row + " "
+        next = push(next, row)
+    memory = next
+
+func walk(dx, dy)
+    if walkable(playerX + dx, playerY + dy)
+        playerX += dx
+        playerY += dy
+    look()
+    advance()
+
+on key "arrow-left"
+    walk(-1, 0)
+
+on key "arrow-right"
+    walk(1, 0)
+
+on key "arrow-up"
+    walk(0, -1)
+
+on key "arrow-down"
+    walk(0, 1)
+
+on key "."
+    log = "you wait."
+    advance()
+
+// Free actions exist, and they are the reason `advance()` is explicit rather than
+// automatic on every keypress: opening your pack is not a move.
+on key "i"
+    pack = pack == false
+
+on turn(n)
+    var next = []
+    var touched = false
+    var stuck = 0
+    for g in goblins
+        // This turn REBUILDS the list rather than editing it, so a half-updated turn
+        // can never be drawn, and each goblin carries the "id" spawn gave it — that id
+        // is what survives the rebuild and lets a goblin be the same goblin next turn
+        // (docs/engine.md §12.2). Rebuilding is a CHOICE here, not a limitation: since
+        // Phase 30, `goblins[i]["hp"] -= 1` is valid QBSK and would edit in place.
+        // (This comment used to deny that index assignment exists. It read as a
+        // language limit rather than a design decision, and cost a reader a rewrite
+        // of code that was already possible — corrected in Phase 33.)
+        var gx = g["x"]
+        var gy = g["y"]
+        // A* over the map (docs/engine.md §13). The route includes both ends, so
+        // route[1] is the next cell — and a length of 1 means "already on you" while
+        // an empty route means "no way through", which is why both ends are included.
+        var route = path(MAP, (gx, gy), (playerX, playerY), "#")
+        if len(route) == 0
+            // Walled off. `path` answers the question; what to do about the answer is
+            // the game's decision, not the pathfinder's (§13.4). These ones wait.
+            stuck += 1
+        if len(route) > 1
+            var step = route[1]
+            if step[0] == playerX and step[1] == playerY
+                touched = true
+                // Goblin dies on contact: remove it by id using `without` (Phase 22).
+                next = without(next, g["id"])
+            else
+                gx = step[0]
+                gy = step[1]
+                next = push(next, {
+                    "id": g["id"], "kind": g["kind"], "glyph": g["glyph"],
+                    "hp": g["hp"], "sight": g["sight"], "x": gx, "y": gy,
+                })
+        else
+            next = push(next, {
+                "id": g["id"], "kind": g["kind"], "glyph": g["glyph"],
+                "hp": g["hp"], "sight": g["sight"], "x": gx, "y": gy,
+            })
+    goblins = next
+    if touched
+        log = "a goblin reaches you on turn {n}."
+    if stuck > 0
+        log = "{stuck} of them cannot find a way to you."
+
+    // Demonstrate `find`: peek at the first goblin's id and see if it still exists.
+    // This shows find() working on the rebuilt list (returns the dict or null).
+    if len(goblins) > 0
+        var firstId = goblins[0]["id"]
+        var found = find(goblins, firstId)
+        // found is the same dict, proving the id survives the rebuild.
+
+look()
+
+layer room z: 0
+    color bg: black fg: bright-black
+    fill " "
+    // Remembered, so the ground you have walked stays on screen. Only what is lit
+    // RIGHT NOW shows creatures. `memory` holds "." and " " and nothing else, so the
+    // mask rule — a space hides the cell — is the same test this used to spell out
+    // by hand, one interpreted cell at a time (docs/engine.md §11.12).
+    put MAP at (0, 0) mask: memory
+    put " they come around the wall " at (16, 0)
+
+layer creatures z: 2
+    color fg: red
+    for g in goblins
+        // A creature you cannot see is not drawn. Until this existed the player
+        // watched every goblin on the map walk at them through solid stone.
+        if seen[g["y"]][g["x"]] == "."
+            put g["glyph"] at (g["x"], g["y"])
+
+layer hero z: 3
+    color fg: bright-white
+    put "@" at (playerX, playerY)
+
+layer bag z: 4
+    color fg: bright-cyan
+    visible: pack
+    border (20, 4) to (40, 9) style: single
+    put " your pack " at (25, 4)
+    put " a torch, lit " at (22, 6)
+    put " i closes (free) " at (22, 7)
+
+// The turn counter reads `turn()` directly: no variable to keep in step, and no way
+// for the display to disagree with the simulation.
+layer hud z: 5
+    color fg: bright-yellow
+    put "turn {turn()}" at (2, 17)
+    color fg: white
+    put log at (14, 17)
+    color fg: bright-black
+    put "arrows move  .  wait   i  pack (free)" at (2, 18)
+
+// The torch flickers on the ANIMATION clock, which keeps running while the simulation
+// waits for you. Standing still shows both clocks at once.
+layer torch z: 9
+    shade radial x: 30 y: 8 radius: 34 tint: yellow strength: 0.30
+    shade pulse speed: 3.1 tint: bright-yellow strength: 0.12

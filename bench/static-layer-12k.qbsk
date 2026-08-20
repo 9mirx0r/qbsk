@@ -1,0 +1,8 @@
+// Phase E1 reference workload: 12,000 deterministic primitives in one static layer.
+scene StaticHeavy(width: 300, height: 90, title: "static only", fps: 60)
+
+layer scenery z: 0
+    fill "."
+    var r = rng(11)
+    for i in 0..12000
+        put "#" at (roll_int(r, 0, 299), roll_int(r, 0, 89))

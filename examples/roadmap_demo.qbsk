@@ -1,0 +1,33 @@
+// demo.qbsk — example scene
+scene Game(width: 120, height: 40, title: "QBSK Demo", fps: 30)
+
+layer sky z: 0
+    fill " "
+
+layer stars z: 5
+    color fg: bright-yellow
+    var r = rng(1234)
+    for i in 0..40
+        put "*" at (roll_int(r, 0, 119), roll_int(r, 0, 39))
+
+layer frame z: 100
+    color fg: cyan
+    border (0, 0) to (119, 39) style: double
+
+var hero_x = 60
+layer hero z: 50
+    sprite "res/hero.qba" at (hero_x, 20) anchor: center
+
+var dx = 1
+on start
+    print("QBSK - arrows to move")
+
+on tick(dt)
+    hero_x = hero_x + dx * 60 * dt
+    if hero_x > 100 or hero_x < 10
+        dx = -dx
+
+on key "arrow-left"
+    dx = -1
+on key "arrow-right"
+    dx = 1

@@ -1,0 +1,162 @@
+// jail.qbsk — a cell, a prisoner, a jailer, and a conversation.
+//
+// The showcase scene: it uses nearly everything the language and engine have.
+//   lists (Phase 1)              hold the dialogue script
+//   interpolation (Phase 2)      renders each line
+//   len (Phase 10)               walks the script
+//   persistent state (Phase 13)  carries the dialogue between frames
+//   tweens (Phase 16)            move both figures smoothly, with easing
+//   frame-swapping (Phase 17)    makes them WALK instead of slide
+//
+// The two are independent and that is the point: the tween decides WHERE the
+// figure is, the sprite cycle decides what its legs are doing. Before Phase 17
+// this scene slid a stick figure a whole cell per frame.
+//   qbsk run --ansi --loop examples/jail.qbsk --fps 20
+scene Jail(width: 78, height: 34)
+
+// The script: each entry is [speaker, line].
+var script = [
+    ["J", "lights out in ten."],
+    ["P", "what day is it?"],
+    ["J", "does it matter?"],
+    ["P", "it did once."],
+    ["J", "sleep, four-oh-seven-seven."],
+    ["P", "i had a name."],
+    ["J", "...i know."],
+    ["", ""],
+]
+
+// The dialogue is a TIMELINE, not a hand-rolled frame counter (Phase 17).
+// Each line is a named step; `timeline_active` says which one is speaking at a
+// given game time, and the modulo makes the conversation loop.
+const talk = timeline_sequence([
+    timeline_step("0", 2.4),
+    timeline_step("1", 2.4),
+    timeline_step("2", 2.4),
+    timeline_step("3", 2.4),
+    timeline_step("4", 2.8),
+    timeline_step("5", 2.4),
+    timeline_step("6", 3.2),
+    timeline_wait(1.6),
+])
+
+var beat = 0
+
+// The prisoner paces wall to wall; the jailer patrols the corridor, slower.
+// These are only the tween's ENDPOINTS — the tween itself holds the position,
+// and swapping the endpoints is what turns a one-shot animate() into a pace
+// back and forth (see `animate_done` below).
+var pA = 5.0
+var pB = 29.0
+var jA = 40.0
+var jB = 68.0
+var flame = 0
+var t = 0
+
+on tick(dt)
+    t = t + 1
+    flame = int(t / 6) % 3
+
+    // Ask the timeline who is speaking. No counter, no bookkeeping: the answer is
+    // a pure function of the clock, so it is the same however often it is asked.
+    var speaking = timeline_active(talk, gameTime() % timeline_duration(talk))
+    if len(speaking) > 0
+        beat = int(speaking[0])
+    else
+        beat = 7
+
+    // Swapping the endpoints changes the tween's parameters, which restarts it —
+    // that is how a one-shot animate() becomes a pace back and forth.
+    if animate_done("pace")
+        var pt = pA
+        pA = pB
+        pB = pt
+
+    if animate_done("patrol")
+        var jt = jA
+        jA = jB
+        jB = jt
+
+layer night z: 0
+    color bg: black fg: bright-black
+    fill " "
+    border (0, 0) to (77, 33) style: double
+
+layer stone z: 1
+    color fg: bright-black
+    border (2, 3) to (35, 29) style: single
+    put "  D BLOCK - CELL 04  " at (9, 3)
+    put "----------------------------------------" at (37, 29)
+
+layer window z: 2
+    color fg: bright-black
+    put "+======+" at (6, 5)
+    put "| # # #|" at (6, 6)
+    put "| # # #|" at (6, 7)
+    put "+======+" at (6, 8)
+    color fg: bright-white
+    put "( )" at (25, 5)
+    put " o " at (25, 6)
+
+layer bunk z: 2
+    color fg: bright-black
+    put "+--------+" at (4, 21)
+    put "|________|" at (4, 22)
+    put "|" at (31, 26)
+    put "()" at (31, 27)
+
+layer bars z: 3
+    color fg: bright-white
+    put "#" at (35, 11)
+    put "#" at (35, 12)
+    put "#" at (35, 13)
+    put "#" at (35, 14)
+    put "#" at (35, 15)
+    put "#" at (35, 16)
+    put "#" at (35, 17)
+    put "#" at (35, 18)
+    put "#" at (35, 19)
+    put "#" at (35, 20)
+    put "#" at (35, 21)
+    put "#" at (35, 22)
+    put "#" at (35, 23)
+    put "#" at (35, 24)
+    put "#" at (35, 25)
+    put "#" at (35, 26)
+    put "#" at (35, 27)
+    color fg: yellow
+    put "=o" at (35, 19)
+
+layer torch z: 3
+    color fg: bright-black
+    put "|" at (73, 12)
+    color fg: yellow
+    put "Y" at (73, 11)
+    color fg: bright-yellow
+    visible: flame == 0
+    put "*" at (73, 10)
+    visible: flame == 1
+    put "^" at (73, 10)
+    color fg: bright-red
+    visible: flame == 2
+    put "'" at (73, 10)
+
+layer prisoner z: 4
+    color fg: bright-cyan
+    sprite "res/walk.qba" at (round(animate("pace", pA, pB, 6.0, "ease-in-out")), 25) frames: 4 fps: 6 loop: true
+
+layer jailer z: 4
+    color fg: bright-green
+    sprite "res/walk.qba" at (round(animate("patrol", jA, jB, 9.0, "linear")), 25) frames: 4 fps: 4 loop: true
+    color fg: yellow
+    put "!" at (round(animate("patrol", jA, jB, 9.0, "linear")) + 4, 26)
+
+layer talk z: 5
+    color fg: bright-black
+    border (2, 30) to (75, 32) style: single
+    color fg: bright-cyan
+    visible: script[beat][0] == "P"
+    put "prisoner  {script[beat][1]}" at (5, 31)
+    color fg: bright-green
+    visible: script[beat][0] == "J"
+    put "jailer    {script[beat][1]}" at (5, 31)

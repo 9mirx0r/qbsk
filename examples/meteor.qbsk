@@ -1,0 +1,20 @@
+// meteor.qbsk — M15: z and visible per primitive (per-frame dynamic reorder)
+//   qbsk run --ansi --loop --fps 20 --frames 120 examples/meteor.qbsk
+// The meteor alternates its z per primitive (2Hz): at z:4 it crosses ABOVE
+// the sign, at z:0 it stays below; it disappears after 4 seconds (dynamic visible).
+scene Meteor(width: 30, height: 10)
+
+layer arena z: 1
+    fill "."
+    border (0, 0) to (29, 9) style: single
+    z: 2
+    color fg: cyan
+    put "QBSK M15 — dynamic z" at (4, 4)
+    // dynamic z: alternates above (4) / below (0) the sign
+    z: int(gameTime() * 4) % 2 * 4
+    sprite "res/ball.qba" at (int(gameTime() * 15) % 24 + 2, 2)
+    color fg: bright-red
+    put "*" at (int(gameTime() * 15) % 24 + 3, 1)
+    // dynamic visible: the meteor fades out at 4 seconds
+    visible: gameTime() < 4.0
+    put "METEOR" at (int(gameTime() * 15) % 24, 6)

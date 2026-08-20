@@ -1,0 +1,634 @@
+// main_menu.qbsk — main menu -> jail cold-open -> live world creation.
+//
+// The full loop, all real, nothing faked:
+//   MENU -> (START GAME) -> an elaborated jail scene with a full conversation ->
+//   the world is generated LIVE, row by row and event by event, with a log
+//   panel showing exactly what was just computed -> the finished world/history.
+//
+// "Live" here is not a figure of speech: `generateOneRow`/`generateOneHistoryEvent`
+// are called a few at a time from `on tick`, so the map you see filling in and the
+// log lines you see appending are the actual generation happening across real
+// frames — not a precomputed result played back as an animation.
+//
+//   qbsk run --ansi --loop examples/main_menu.qbsk --fps 20
+scene MainMenu(width: 102, height: 34)
+
+// ===== WORLD GENERATION =====
+const WORLD_WIDTH = 60
+const WORLD_HEIGHT = 18
+
+// Terrain types for procedural generation
+const TERRAIN_TYPES = ["mountain", "forest", "plains", "river", "swamp", "desert", "volcanic"]
+
+// Generate a world seed from current time or fixed seed for reproducibility
+var worldSeed = 12345
+
+// History log with years
+var historyLog = []
+var currentYear = 1000
+
+// World state
+var worldMap = []
+var worldGenerated = false
+var selectedOption = 0
+
+// Menu options
+const MENU_OPTIONS = ["START GAME", "VIEW HISTORY", "GENERATE WORLD", "QUIT"]
+
+// Hand-rolled LCG, kept pure (seed in, next seed out): this example predates L4 and
+// its goldens pin this exact stream. New code wants lcg()/roll_int() (docs/language.md
+// §6.5). Renamed from 'rng' when that native arrived and took the name.
+func lcg(seed)
+    seed = (seed * 1103515245 + 12345) % 2147483648
+    return seed
+
+func randomInt(min, max, seed)
+    var r = lcg(seed)
+    return min + (r % (max - min + 1))
+
+// Convert terrain type to ASCII character
+func terrainChar(terrain)
+    if terrain == "mountain"
+        return "^"
+    elif terrain == "forest"
+        return "♣"
+    elif terrain == "plains"
+        return "."
+    elif terrain == "river"
+        return "~"
+    elif terrain == "swamp"
+        return "§"
+    elif terrain == "desert"
+        return "░"
+    elif terrain == "volcanic"
+        return "▓"
+    else
+        return "?"
+
+// One row of the map, generated NOW. Rows are strings of the glyph characters
+// themselves (docs/engine.md §13.1: "the map is a list of strings") — so the
+// rendering layer never has to re-derive a terrain name from a glyph.
+func generateOneRow(seed)
+    var row = ""
+    var s = seed
+    var x = 0
+    while x < WORLD_WIDTH
+        s = lcg(s)
+        var terrainIdx = s % len(TERRAIN_TYPES)
+        row = row + terrainChar(TERRAIN_TYPES[terrainIdx])
+        x += 1
+    return [s, row]
+
+func addHistoryEvent(year, event)
+    historyLog = push(historyLog, {"year": year, "event": event})
+
+func kingdomName(seed)
+    var names = ["Aldoria", "Brennia", "Caldera", "Drakkar", "Eldoria", "Frostheim", "Galdor", "Haven", "Ironhold", "Jotun"]
+    return names[seed % len(names)]
+
+func locationName(seed)
+    var names = ["Mount Everpeak", "Darkwood Forest", "Crystal Caves", "Sunken Ruins", "Whispering Plains", "Frostfang Pass", "Ember Valley", "Shadowmarsh"]
+    return names[seed % len(names)]
+
+// One history event, generated NOW.
+func generateOneHistoryEvent(seed)
+    var s = lcg(seed)
+    var eventType = s % 5
+    var event = ""
+    if eventType == 0
+        event = "Kingdom of " + kingdomName(s) + " founded"
+    elif eventType == 1
+        event = "War broke out between " + kingdomName(s) + " and " + kingdomName(lcg(s))
+    elif eventType == 2
+        event = "Great plague struck " + kingdomName(s)
+    elif eventType == 3
+        event = "Dragon sighted near " + locationName(s)
+    else
+        event = "Ancient ruins discovered in " + locationName(s)
+    return [s, event]
+
+func addGenLog(msg)
+    genLog = push(genLog, msg)
+
+// Resets the world and starts a fresh live generation. Called every time a
+// world is (re)born — from the jail's ending, from the menu, or from the "G"
+// key in-world — so generation is ALWAYS the real, watchable process, never
+// an instant shortcut.
+func startGeneration()
+    worldMap = []
+    historyLog = []
+    genRow = 0
+    genPhase = "map"
+    genYearCursor = 1000
+    genSeedCursor = lcg(worldSeed + 1)
+    worldSeed = genSeedCursor
+    genLog = []
+    genTickAccum = 0
+    worldGenerated = false
+    currentYear = 1000
+    addGenLog("Dawn breaks. The gate creaks open.")
+    addGenLog("The land beyond has not finished becoming itself.")
+
+// ===== SCREEN STATE =====
+// One flag drives everything: "menu" | "jail" | "generating" | "world".
+var screen = "menu"
+var historyScroll = 0
+
+// ===== THE JAIL COLD-OPEN =====
+// A full scene in its own right (torch glow, embers, two independently
+// patrolling figures, a proper dialogue box with named speakers and a beep
+// per voice) that plays once when you press START, then hands off to a
+// world that is actually being built while you watch.
+
+const PRISONER = {"name": "Adrian", "tag": "4077", "pitch": 180}
+const JAILER = {"name": "Vosk", "tag": "warden", "pitch": 96}
+
+const script = [
+    ["J", "on your feet, 4077."],
+    ["P", "...vosk? you're early tonight."],
+    ["J", "orders changed. so did yours."],
+    ["P", "changed how?"],
+    ["J", "warden signed a release an hour ago. yours."],
+    ["P", "i've got six years left on this."],
+    ["J", "had. paperwork doesn't ask questions, and neither should you."],
+    ["P", "why now, of all nights?"],
+    ["J", "the old maps stopped matching the land. something out there is remaking it."],
+    ["P", "remaking it how?"],
+    ["J", "kingdoms rising where there were none this morning. rivers cutting new courses."],
+    ["P", "and they want a prisoner walking into that?"],
+    ["J", "they want anyone still willing to see what's true before it settles."],
+    ["J", "gate opens at dawn, Adrian. don't make me regret this."],
+    ["", ""],
+]
+
+const talk = timeline_sequence([
+    timeline_step("0", 2.4),
+    timeline_step("1", 2.6),
+    timeline_step("2", 2.2),
+    timeline_step("3", 2.0),
+    timeline_step("4", 3.0),
+    timeline_step("5", 2.6),
+    timeline_step("6", 3.2),
+    timeline_step("7", 2.2),
+    timeline_step("8", 3.4),
+    timeline_step("9", 2.0),
+    timeline_step("10", 3.2),
+    timeline_step("11", 2.8),
+    timeline_step("12", 3.4),
+    timeline_step("13", 3.0),
+    timeline_wait(1.6),
+])
+
+// Embers rising off the corridor torch.
+const jailEmbers = {
+    "x": 73.0, "y": 10.0,
+    "count": 10, "life": 1.4,
+    "speed": 2.4, "angle": 90.0, "spread": 18.0,
+    "fall": 0 - 1.4, "drift": 0.5, "seed": 3,
+}
+
+var jailStartTime = 0.0
+var jailDone = false
+var beat = 14
+var speaker = ""
+var pA = 5.0
+var pB = 29.0
+var jA = 40.0
+var jB = 68.0
+var flame = 0
+var t = 0
+
+// ===== LIVE GENERATION STATE =====
+var genPhase = "map"
+var genRow = 0
+var genSeedCursor = 0
+var genYearCursor = 1000
+var genLog = []
+var genTickAccum = 0
+var genDoneAt = 0.0
+
+// ===== INPUT HANDLING =====
+// Guarded handlers (docs/language.md §6.6): each screen's response to a key is its
+// own handler, gated by `when`. Before L3 every handler here was a dispatch table —
+// `on key "enter"` held a four-branch `if screen == ...` — and this file is the
+// measured pain that motivated the guard.
+on key "arrow-up" when screen == "menu"
+    selectedOption = (selectedOption - 1 + len(MENU_OPTIONS)) % len(MENU_OPTIONS)
+
+on key "arrow-up" when screen == "world"
+    historyScroll = max(0, historyScroll - 1)
+
+on key "arrow-down" when screen == "menu"
+    selectedOption = (selectedOption + 1) % len(MENU_OPTIONS)
+
+on key "arrow-down" when screen == "world"
+    historyScroll = min(len(historyLog) - 1, historyScroll + 1)
+
+on key "enter" when screen == "menu"
+    if selectedOption == 0  // START GAME
+        screen = "jail"
+        jailStartTime = gameTime()
+        jailDone = false
+        beat = 14
+        speaker = ""
+    elif selectedOption == 1  // VIEW HISTORY
+        if worldGenerated
+            screen = "world"
+        else
+            screen = "generating"
+            startGeneration()
+    elif selectedOption == 2  // GENERATE WORLD
+        screen = "generating"
+        startGeneration()
+    elif selectedOption == 3  // QUIT
+        exit(0)
+
+on key "enter" when screen == "world"
+    screen = "menu"
+
+on key "escape" when screen == "jail"
+    // Skip the cold-open straight into the (still fully live) world creation.
+    jailDone = true
+    screen = "generating"
+    startGeneration()
+
+on key "escape" when screen == "world"
+    screen = "menu"
+
+on key "g" when screen == "world"
+    screen = "generating"
+    startGeneration()
+
+// ===== PER-FRAME LOGIC =====
+// The flame animates on EVERY screen, so its tick is unguarded; each screen's own
+// per-frame logic is a separate guarded tick (§6.6) instead of one handler holding
+// the union of every screen's frame work.
+on tick(dt)
+    t = t + 1
+    flame = int(t / 6) % 3
+
+on tick(dt) when screen == "jail"
+    var jailElapsed = gameTime() - jailStartTime
+    var speaking = timeline_active(talk, jailElapsed)
+    if len(speaking) > 0
+        beat = int(speaking[0])
+        speaker = script[beat][0]
+    else
+        beat = len(script) - 1
+        speaker = ""
+
+    if animate_done("pace")
+        var pt = pA
+        pA = pB
+        pB = pt
+    if animate_done("patrol")
+        var jt = jA
+        jA = jB
+        jB = jt
+
+    if not jailDone and jailElapsed >= timeline_duration(talk)
+        jailDone = true
+        screen = "generating"
+        startGeneration()
+
+on tick(dt) when screen == "generating"
+    genTickAccum += 1
+    if genTickAccum >= 3
+        genTickAccum = 0
+        if genPhase == "map"
+            if genRow < WORLD_HEIGHT
+                var result = generateOneRow(genSeedCursor)
+                genSeedCursor = result[0]
+                worldMap = push(worldMap, result[1])
+                genRow += 1
+                if genRow % 4 == 0 or genRow == WORLD_HEIGHT
+                    addGenLog("Surveying the land... row " + str(genRow) + "/" + str(WORLD_HEIGHT))
+            else
+                genPhase = "history"
+                addGenLog("The land holds its shape. Now its past must be written.")
+        elif genPhase == "history"
+            if genYearCursor < 1100
+                var hresult = generateOneHistoryEvent(genSeedCursor)
+                genSeedCursor = hresult[0]
+                var event = hresult[1]
+                addHistoryEvent(genYearCursor, event)
+                addGenLog(str(genYearCursor) + ": " + event)
+                genYearCursor += randomInt(1, 20, genSeedCursor)
+                genSeedCursor = lcg(genSeedCursor)
+            else
+                currentYear = 1100
+                genPhase = "done"
+                worldGenerated = true
+                addGenLog("The chronicle is complete: " + str(len(historyLog)) + " events recorded.")
+                genDoneAt = gameTime()
+        elif genPhase == "done"
+            if gameTime() - genDoneAt > 1.2
+                screen = "world"
+
+// ===== RENDERING =====
+
+// ----- Title screen / Main Menu -----
+layer menu z: 0
+    visible: screen == "menu"
+    color bg: black fg: white
+    fill " "
+
+    color fg: bright-cyan
+    put "    ╔══════════════════════════════════════╗" at (15, 3)
+    put "    ║           REALMS OF ETERNITY          ║" at (15, 4)
+    put "    ║         A Procedural ASCII RPG        ║" at (15, 5)
+    put "    ╚══════════════════════════════════════╝" at (15, 6)
+
+    color fg: bright-white
+    var i = 0
+    while i < len(MENU_OPTIONS)
+        var prefix = "  "
+        if i == selectedOption
+            color fg: bright-yellow
+            prefix = "► "
+        else
+            color fg: bright-white
+            prefix = "  "
+        put prefix + MENU_OPTIONS[i] at (28, 10 + i * 2)
+        i += 1
+
+    color fg: bright-black
+    put "▲/▼ Navigate    ENTER Select    ESC Back" at (20, 21)
+
+    color fg: bright-black
+    put "QBSK 0.1.0  |  Realms of Eternity v0.1" at (2, 23)
+
+layer controls z: 2
+    visible: screen == "menu"
+    color fg: bright-black
+    put "Use ARROWS to navigate, ENTER to select, ESC to quit" at (18, 22)
+
+// ----- The jail cold-open -----
+
+layer night z: 0
+    visible: screen == "jail"
+    color bg: black fg: bright-black
+    fill " "
+    border (0, 0) to (77, 33) style: double
+
+layer stone z: 1
+    visible: screen == "jail"
+    color fg: bright-black
+    border (2, 3) to (35, 29) style: single
+    put "  D BLOCK - CELL 04  " at (9, 3)
+    put "----------------------------------------" at (37, 29)
+    put "|||| |||| |||| ||" at (5, 18)
+
+layer window z: 2
+    visible: screen == "jail"
+    color fg: bright-black
+    put "+======+" at (6, 5)
+    put "| # # #|" at (6, 6)
+    put "| # # #|" at (6, 7)
+    put "+======+" at (6, 8)
+    color fg: bright-white
+    put "( )" at (25, 5)
+    put " o " at (25, 6)
+
+layer bunk z: 2
+    visible: screen == "jail"
+    color fg: bright-black
+    put "+--------+" at (4, 21)
+    put "|________|" at (4, 22)
+    put "|" at (31, 26)
+    put "()" at (31, 27)
+
+layer bars z: 3
+    visible: screen == "jail"
+    color fg: bright-white
+    put "#" at (35, 11)
+    put "#" at (35, 12)
+    put "#" at (35, 13)
+    put "#" at (35, 14)
+    put "#" at (35, 15)
+    put "#" at (35, 16)
+    put "#" at (35, 17)
+    put "#" at (35, 18)
+    put "#" at (35, 19)
+    put "#" at (35, 20)
+    put "#" at (35, 21)
+    put "#" at (35, 22)
+    put "#" at (35, 23)
+    put "#" at (35, 24)
+    put "#" at (35, 25)
+    put "#" at (35, 26)
+    put "#" at (35, 27)
+    color fg: yellow
+    put "=o" at (35, 19)
+
+layer torch z: 3
+    visible: screen == "jail"
+    color fg: bright-black
+    put "|" at (73, 12)
+    color fg: yellow
+    put "Y" at (73, 11)
+    color fg: bright-yellow
+    visible: screen == "jail" and flame == 0
+    put "*" at (73, 10)
+    visible: screen == "jail" and flame == 1
+    put "^" at (73, 10)
+    color fg: bright-red
+    visible: screen == "jail" and flame == 2
+    put "'" at (73, 10)
+
+layer torchglow z: 3
+    visible: screen == "jail"
+    shade radial x: 73 y: 11 radius: 16 tint: bright-yellow strength: 0.35
+    color fg: bright-yellow
+    var ei = 0
+    while ei < 10
+        var ep = particle(ei, gameTime(), jailEmbers)
+        put glyph(1.0 - ep[2], " .:*") at (ep[0], ep[1])
+        ei += 1
+
+layer prisoner z: 4
+    visible: screen == "jail"
+    color fg: bright-cyan
+    sprite "res/walk.qba" at (round(animate("pace", pA, pB, 6.0, "ease-in-out")), 25) frames: 4 fps: 6 loop: true
+
+layer jailer z: 4
+    visible: screen == "jail"
+    color fg: bright-green
+    sprite "res/walk.qba" at (round(animate("patrol", jA, jB, 9.0, "linear")), 25) frames: 4 fps: 4 loop: true
+    color fg: yellow
+    put "!" at (round(animate("patrol", jA, jB, 9.0, "linear")) + 4, 26)
+
+layer jailtextframe z: 5
+    visible: screen == "jail"
+    color fg: bright-black
+    put "+--------------------------------------------------------------------------+" at (1, 30)
+    put "|                                                                          |" at (1, 31)
+    put "|                                                                          |" at (1, 32)
+    put "+--------------------------------------------------------------------------+" at (1, 33)
+
+layer jailvoice z: 6
+    visible: screen == "jail" and speaker == "P"
+    tone 180 wave: triangle duration: 0.09 volume: 0.3
+    visible: screen == "jail" and speaker == "J"
+    tone 96 wave: square duration: 0.12 volume: 0.35
+
+layer jailnameplate z: 6
+    visible: screen == "jail" and speaker == "P"
+    color fg: bright-cyan
+    put "[ {PRISONER["name"]} - {PRISONER["tag"]} ]" at (4, 30)
+    color fg: bright-white
+    put "{script[beat][1]}" at (6, 32)
+
+    visible: screen == "jail" and speaker == "J"
+    color fg: bright-green
+    put "[ {JAILER["name"]} - {JAILER["tag"]} ]" at (4, 30)
+    color fg: bright-white
+    put "{script[beat][1]}" at (6, 32)
+
+    visible: screen == "jail" and speaker == ""
+    color fg: bright-black
+    put "( the corridor falls quiet )" at (6, 32)
+
+layer jailhint z: 6
+    visible: screen == "jail"
+    color fg: bright-black
+    put "ESC: skip to the world" at (60, 30)
+
+// ----- Live world creation -----
+
+layer generating z: 1
+    visible: screen == "generating"
+    color bg: black fg: white
+    fill " "
+
+    if len(worldMap) > 0
+        var row = 0
+        while row < len(worldMap) and row < 20
+            var mapRow = worldMap[row]
+            var col = 0
+            while col < WORLD_WIDTH and col < 60
+                var terrain = mapRow[col]
+                if terrain == null
+                    terrain = " "
+                if terrain == "^"
+                    color fg: bright-white
+                elif terrain == "♣"
+                    color fg: green
+                elif terrain == "."
+                    color fg: bright-yellow
+                elif terrain == "~"
+                    color fg: blue
+                elif terrain == "§"
+                    color fg: bright-cyan
+                elif terrain == "░"
+                    color fg: yellow
+                elif terrain == "▓"
+                    color fg: red
+                put terrain at (col, row)
+                col += 1
+            row += 1
+
+    // Unsurveyed rows still read as fog, so the map visibly fills in top to bottom.
+    color fg: bright-black
+    var fogRow = len(worldMap)
+    while fogRow < WORLD_HEIGHT and fogRow < 20
+        var fogCol = 0
+        while fogCol < WORLD_WIDTH and fogCol < 60
+            put "?" at (fogCol, fogRow)
+            fogCol += 1
+        fogRow += 1
+
+    color fg: bright-cyan
+    put "╔═══════════════════════════════════╗" at (62, 0)
+    put "║      THE WORLD IS BEING WRITTEN    ║" at (62, 1)
+    put "╠═══════════════════════════════════╣" at (62, 2)
+    color fg: bright-white
+    var phaseLabel = "Surveying the land"
+    if genPhase == "history"
+        phaseLabel = "Chronicling its history"
+    elif genPhase == "done"
+        phaseLabel = "Complete"
+    put "  " + phaseLabel + "..." at (62, 3)
+    color fg: bright-cyan
+    put "╠═══════════════════════════════════╣" at (62, 4)
+
+    var logRow = 5
+    var visibleLogs = 17
+    var startIdx = max(0, len(genLog) - visibleLogs)
+    var li = startIdx
+    color fg: bright-white
+    while li < len(genLog) and logRow < 22
+        var msg = genLog[li]
+        put "  " + msg at (62, logRow)
+        logRow += 1
+        li += 1
+
+    color fg: bright-yellow
+    visible: genPhase != "done"
+    var spinChars = ["|", "/", "-", "\\"]
+    var spin = spinChars[int(t / 2) % 4]
+    put spin + " working..." at (64, 22)
+
+    color fg: bright-green
+    visible: genPhase == "done"
+    put "done." at (64, 22)
+
+    color fg: bright-cyan
+    visible: true
+    put "╚═══════════════════════════════════╝" at (62, 23)
+
+// ----- The finished world, with history -----
+
+layer mapview z: 1
+    visible: screen == "world"
+    color bg: black fg: white
+    fill " "
+
+    if len(worldMap) > 0
+        var row = 0
+        while row < len(worldMap) and row < 20
+            var mapRow = worldMap[row]
+            if mapRow != null
+                var col = 0
+                while col < WORLD_WIDTH and col < 60
+                    var terrain = mapRow[col]
+                    if terrain == null
+                        terrain = " "
+                    if terrain == "^"
+                        color fg: bright-white
+                    elif terrain == "♣"
+                        color fg: green
+                    elif terrain == "."
+                        color fg: bright-yellow
+                    elif terrain == "~"
+                        color fg: blue
+                    elif terrain == "§"
+                        color fg: bright-cyan
+                    elif terrain == "░"
+                        color fg: yellow
+                    elif terrain == "▓"
+                        color fg: red
+                    put terrain at (col, row)
+                    col += 1
+            row += 1
+
+    color fg: bright-cyan
+    put "╔═══════════════════════════════════╗" at (62, 0)
+    put "║         HISTORY OF THE REALM       ║" at (62, 1)
+    put "╠═══════════════════════════════════╣" at (62, 2)
+    put "║ Current Year: " + str(currentYear) + "          ║" at (62, 3)
+    put "╠═══════════════════════════════════╣" at (62, 4)
+
+    var logRow = 5
+    var i = historyScroll
+    while i < len(historyLog) and logRow < 22
+        var entry = historyLog[i]
+        color fg: bright-white
+        put "  Year " + str(entry["year"]) + ": " + entry["event"] at (62, logRow)
+        logRow += 1
+        i += 1
+
+    put "╚═══════════════════════════════════╝" at (62, 23)
+
+    color fg: bright-black
+    put "G: Regenerate (live)   ESC: Menu   ↑/↓: Scroll History" at (2, 23)

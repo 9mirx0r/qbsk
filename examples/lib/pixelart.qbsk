@@ -1,0 +1,240 @@
+// pixelart.qbsk — Phase 32 V1: a symmetric, coherence-seeking pixel-art generator.
+//
+// Algorithm: threshold -> smooth (cellular automaton) -> color -> mirror. Full Wave
+// Function Collapse is deliberately NOT this — named as the real next step in
+// 06-active-language-phases.md's Phase 32 design, once this simpler pipeline is proven
+// and a concrete need for adjacency-constrained variety (not just symmetric blobs) is
+// demonstrated. That's the same "measure the simple version before building the
+// expensive one" discipline Phase 25/26/27 all used.
+//
+// Entropy stays host-side (bench/sprite-gen.mjs) — the same boundary Phase 27, 28, 29
+// and 31 all draw: QBSK has no bitwise operators, so no seeded PRNG can be a
+// QBSK-language library. `fillRolls`/`colorRolls` are pre-rolled [0,1) floats, sized
+// halfWidth*height each — only a HALF image is rolled; the other half is a mirror, not
+// independently generated, which is also what makes the result read as an intentional
+// shape rather than noise.
+//
+// Convention: pixel value 0 means empty (not drawn); pixel value k (1..paletteSize)
+// means the k-1'th entry of whatever palette the caller defined (this library never
+// reads a palette itself — it only produces indices into one, exactly like
+// lib/population.qbsk never rolls its own dice).
+
+func idx(x, y, w)
+    return y * w + x
+
+func inBounds(x, y, w, h)
+    if x < 0 or x >= w or y < 0 or y >= h
+        return false
+    return true
+
+// A cell is filled (1) if its pre-rolled float landed under fillChance, else empty (0).
+func seedHalf(halfWidth, height, fillRolls, fillChance)
+    var grid = []
+    var i = 0
+    while i < halfWidth * height
+        if fillRolls[i] < fillChance
+            grid = push(grid, 1)
+        else
+            grid = push(grid, 0)
+        i += 1
+    return grid
+
+// One cellular-automaton pass, the same shape roguelike cave-generation CAs use (a
+// filled cell survives with enough filled neighbors; an empty cell fills in if it has
+// even more): a filled cell stays filled if it has at least `surviveThreshold` filled
+// neighbors (of up to 8); an empty cell becomes filled if it has at least
+// `growThreshold` filled neighbors. TWO thresholds, not one — a single shared threshold
+// can't be both "low enough that a deliberately-placed pixel survives being alone" and
+// "high enough that noise doesn't spread" at the same time (found by this library's own
+// test suite: a threshold picked to stop growth also erased isolated real pixels).
+// `growThreshold` is normally higher than `surviveThreshold` — that gap is what turns
+// scattered noise into smooth blobs instead of jagged fringes. Reads only from `grid`
+// (the prior state), writes to a fresh list, so neighbor counts never see this pass's
+// own output — `generate()` calls this several times in a row for that reason (a single
+// pass was tried first and rejected by inspection: known cave-generation-CA behavior —
+// one pass thins noise but doesn't converge to a blob; see `generate()`'s own note).
+func smoothHalf(halfWidth, height, grid, surviveThreshold, growThreshold)
+    var out = []
+    var y = 0
+    while y < height
+        var x = 0
+        while x < halfWidth
+            var count = 0
+            var dy = -1
+            while dy <= 1
+                var dx = -1
+                while dx <= 1
+                    if not (dx == 0 and dy == 0)
+                        var nx = x + dx
+                        var ny = y + dy
+                        if inBounds(nx, ny, halfWidth, height)
+                            count += grid[idx(nx, ny, halfWidth)]
+                    dx += 1
+                dy += 1
+            var current = grid[idx(x, y, halfWidth)]
+            var next = 0
+            if current == 1 and count >= surviveThreshold
+                next = 1
+            if current == 0 and count >= growThreshold
+                next = 1
+            out = push(out, next)
+            x += 1
+        y += 1
+    return out
+
+// Replaces each filled (1) cell with a palette index in [1, paletteSize], chosen by
+// `colorRolls`; empty cells stay 0. Colored BEFORE mirroring, not after — so a mirrored
+// pair of pixels always shares one color instead of being rolled independently, the
+// same symmetry the shape itself has.
+func colorHalf(halfWidth, height, grid, colorRolls, paletteSize)
+    var out = []
+    var i = 0
+    while i < halfWidth * height
+        if grid[i] == 1
+            var colorIndex = 1 + floor(colorRolls[i] * paletteSize)
+            if colorIndex > paletteSize
+                colorIndex = paletteSize
+            out = push(out, colorIndex)
+        else
+            out = push(out, 0)
+        i += 1
+    return out
+
+// Adds a border color around the filled silhouette: an empty cell (0) that touches at
+// least one filled (non-zero) neighbor becomes `outlineIndex` instead of staying empty.
+// Found necessary by comparing against real reference sprites, not invented in
+// advance (06-active-language-phases.md's Phase 32 entry): weapon and creature sprites
+// alike are outlined; a filled region with no border reads as raw fill, not as an
+// intentional object. The SAME comparison found noise/texture belongs on MATERIALS
+// (walls, terrain) rather than on discrete object silhouettes — which is why this pass
+// runs on the COLORED half-grid (after colorHalf, before mirror), not before smoothing:
+// it only needs to tell "empty" (0) from "anything else," which a colored grid already
+// represents, and running it before mirror makes the outline symmetric for free.
+// `outlineIndex` of 0 is a real "no outline" — an outlined cell just becomes 0 again,
+// no different from staying empty, so callers that don't want a border simply pass 0.
+func applyOutline(halfWidth, height, grid, outlineIndex)
+    var out = []
+    var y = 0
+    while y < height
+        var x = 0
+        while x < halfWidth
+            var current = grid[idx(x, y, halfWidth)]
+            if current != 0
+                out = push(out, current)
+            else
+                var hasFilledNeighbor = false
+                var dy = -1
+                while dy <= 1
+                    var dx = -1
+                    while dx <= 1
+                        if not (dx == 0 and dy == 0)
+                            var nx = x + dx
+                            var ny = y + dy
+                            if inBounds(nx, ny, halfWidth, height)
+                                if grid[idx(nx, ny, halfWidth)] != 0
+                                    hasFilledNeighbor = true
+                        dx += 1
+                    dy += 1
+                if hasFilledNeighbor
+                    out = push(out, outlineIndex)
+                else
+                    out = push(out, 0)
+            x += 1
+        y += 1
+    return out
+
+// Mirrors a halfWidth-wide grid into a full (halfWidth*2)-wide grid, left-right
+// symmetric. Works on any int grid — fill values, color indices, doesn't matter, it
+// only ever copies.
+func mirror(halfWidth, height, grid)
+    var width = halfWidth * 2
+    var out = []
+    var y = 0
+    while y < height
+        var x = 0
+        while x < width
+            var srcX = x
+            if x >= halfWidth
+                srcX = width - 1 - x
+            out = push(out, grid[idx(srcX, y, halfWidth)])
+            x += 1
+        y += 1
+    return out
+
+// The full pipeline. Returns a flat, row-major list of palette indices,
+// (halfWidth*2)*height long — directly the `pixels` field of a `.qbdata` `pixel_sprite`
+// (06-active-language-phases.md's Phase 32 design §1).
+//
+// `iterations` — found by inspection, not assumed: a first version ran smoothHalf ONCE
+// and the rendered result was a scattered checkerboard, not a blob (visually confirmed,
+// bench/sprite-gen.mjs's own output before this fix). That matches published
+// cave-generation-CA behavior — one pass thins isolated noise but doesn't converge to
+// large connected regions; the standard fix is running the same pass several times in a
+// row, each one operating on the previous pass's result. Still not WFC, still not
+// iterated forever — a small, fixed, caller-chosen count.
+export func generate(halfWidth, height, fillRolls, colorRolls, paletteSize, fillChance, surviveThreshold, growThreshold, iterations, outlineIndex)
+    var grid = seedHalf(halfWidth, height, fillRolls, fillChance)
+    var i = 0
+    while i < iterations
+        grid = smoothHalf(halfWidth, height, grid, surviveThreshold, growThreshold)
+        i += 1
+    var colored = colorHalf(halfWidth, height, grid, colorRolls, paletteSize)
+    var outlined = applyOutline(halfWidth, height, colored, outlineIndex)
+    return mirror(halfWidth, height, outlined)
+
+// Phase 32 (mask-gated generation) — found live: `generate()` above has no way to
+// target a specific recognizable silhouette (a sword, an axe, a creature category) —
+// it only ever produces symmetric organic noise. Researched exhaustively
+// (06-active-language-phases.md's Phase 32 entry): every technique that DOES produce a
+// recognizable shape (Jdenticon's shape-primitive grids, RoboHash's part libraries,
+// WFC's adjacency rules) encodes that shape's structure by hand somewhere — none
+// invent it from noise alone. The cheapest version of that idea: a tri-state mask
+// (0=never, 1=maybe, 2=always) authored once per silhouette, gating this SAME pipeline
+// instead of replacing it.
+//
+// `mask[i]`:
+//   0 (never)  -> the cell is always empty, no matter what noise/smoothing computed
+//   2 (always) -> the cell is always filled, no matter what noise/smoothing computed
+//   1 (maybe)  -> the cell is whatever noise/smoothing actually computed (unconstrained)
+// Only "maybe" cells carry real randomness; "always"/"never" cells are the authored
+// silhouette. This is why a masked sword still has organic-looking edge texture instead
+// of a perfectly crisp stencil: cells just inside/outside the strict outline are
+// "maybe", so the same CA smoothing generate() already does still roughens them.
+func applyMask(halfWidth, height, grid, mask)
+    var out = []
+    var i = 0
+    while i < halfWidth * height
+        if mask[i] == 2
+            out = push(out, 1)
+        else
+            if mask[i] == 0
+                out = push(out, 0)
+            else
+                out = push(out, grid[i])
+        i += 1
+    return out
+
+// Same pipeline as generate(), plus `mask`, applied after seeding AND after every
+// smoothing pass — not just once at the end. Applying it every pass (not only at the
+// end) means "maybe" cells organically react to the now-locked silhouette around them
+// while smoothing runs, instead of the silhouette being stamped on top of unrelated
+// noise as a final, disconnected step.
+export func generateMasked(halfWidth, height, fillRolls, colorRolls, paletteSize, fillChance, surviveThreshold, growThreshold, iterations, mask, outlineIndex)
+    // The mask is the AUTHORED part -- the only part of this pipeline that is not noise
+    // -- so a mask of the wrong size is a wrong silhouette rather than a wrong pixel. Too
+    // short ran off the end of the list and reported from inside a private helper,
+    // naming nothing the caller passed; too long silently ignored the extra cells, so a
+    // silhouette authored at one size and used at another produced a different shape
+    // with no complaint.
+    if len(mask) != halfWidth * height
+        fail("generateMasked: a " + str(halfWidth) + "x" + str(height) + " half-grid needs a mask of " + str(halfWidth * height) + " cells, got " + str(len(mask)))
+    var grid = seedHalf(halfWidth, height, fillRolls, fillChance)
+    grid = applyMask(halfWidth, height, grid, mask)
+    var i = 0
+    while i < iterations
+        grid = smoothHalf(halfWidth, height, grid, surviveThreshold, growThreshold)
+        grid = applyMask(halfWidth, height, grid, mask)
+        i += 1
+    var colored = colorHalf(halfWidth, height, grid, colorRolls, paletteSize)
+    var outlined = applyOutline(halfWidth, height, colored, outlineIndex)
+    return mirror(halfWidth, height, outlined)

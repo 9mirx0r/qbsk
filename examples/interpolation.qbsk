@@ -1,0 +1,12 @@
+var name = "Ada"
+var age = 36
+var grades = [8, 9, 10]
+var profile = {"city": "CABA"}
+
+print("hello {name}, you are {age} years old")
+print("sum: {8 + 9 + 10}")
+print("count: {len(grades)}")
+print("first: {grades[0]}")
+print("city: {profile["city"]}")
+print("full dict: {profile}")
+print("escaped braces: {{name}")

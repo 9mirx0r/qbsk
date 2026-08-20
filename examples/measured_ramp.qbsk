@@ -1,0 +1,32 @@
+// The measured density ramp (docs/engine.md §11.15).
+//
+// The same gradient twice. Above, through glyph()'s hand-written default; below,
+// through a ramp MEASURED from a rendered strip of the same glyphs.
+//
+// The two disagree, which is the whole reason for measuring. The hand-written order
+// guessed that '=' is lighter than '+' and that '#' is lighter than '%'; the font says
+// otherwise on both counts. Which font, though, is the point: this table came from one
+// terminal's rendering, and that is why it ships as swappable data rather than as
+// constants compiled into the engine.
+
+use "res/ramp.qbdata" as ramp
+
+const W = 40
+
+scene MeasuredRamp(width: 44, height: 7, title: "guessed, then measured")
+
+layer guessed z: 0
+    color fg: bright-black
+    put "hand-written" at (0, 0)
+    for x in 0..W
+        put glyph(float(x) / float(W)) at (x + 2, 1)
+
+layer measured z: 0
+    color fg: bright-cyan
+    put "measured" at (0, 3)
+    for x in 0..W
+        put glyph(float(x) / float(W), ramp.MEASURED["glyphs"]) at (x + 2, 4)
+
+layer note z: 0
+    color fg: bright-black
+    put "the two orders differ at + = and % #" at (2, 6)

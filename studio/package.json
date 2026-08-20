@@ -1,0 +1,21 @@
+{
+  "name": "qbsk-studio",
+  "version": "0.1.0",
+  "description": "QBSK Studio \u2014 the QBSK language and ASCII engine inside a window",
+  "private": true,
+  "author": "Quebratsk",
+  "license": "UNLICENSED",
+  "type": "module",
+  "main": "../dist-studio/studio/main/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/copy-renderer.mjs",
+    "start": "npm run build && electron .",
+    "mcp": "node ../dist-studio/studio/mcp/stdio.js --root ..",
+    "smoke": "node scripts/smoke.mjs",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "start:nobuild": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^38.8.6"
+  }
+}

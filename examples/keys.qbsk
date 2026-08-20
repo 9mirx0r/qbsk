@@ -1,0 +1,40 @@
+// keys.qbsk — Phase 13: persistent state + events (docs/language.md §7.7)
+// The interpreter runs ONCE; on tick / on key handlers mutate top-level vars that
+// survive into the following frames, and the scene re-composes from them each frame.
+//   qbsk run --ansi --loop examples/keys.qbsk --fps 20 --frames 120
+//   qbsk check examples/keys.qbsk
+scene Keys(width: 24, height: 9)
+
+var playerX = 2
+var playerY = 4
+var ballX = 5
+var ballDir = 1
+
+on start
+    playerX = 2
+    playerY = 4
+
+on tick(dt)
+    ballX = ballX + ballDir
+    if ballX >= 20
+        ballDir = -1
+    if ballX <= 2
+        ballDir = 1
+
+on key "arrow-left"
+    if playerX > 1
+        playerX = playerX - 1
+
+on key "arrow-right"
+    if playerX < 20
+        playerX = playerX + 1
+
+layer arena z: 1
+    fill "."
+    box (0, 0) to (23, 8) style: double
+
+layer ball z: 2
+    text "o" at (ballX, 1)
+
+layer player z: 3
+    text "@" at (playerX, playerY)

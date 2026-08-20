@@ -1,0 +1,20 @@
+// tour_art.qbsk — the drawing example from docs/tour.md §5.
+//
+// `color` is a STATE DIRECTIVE: it styles every primitive below it in the same layer,
+// until another `color` replaces it. Written after its primitives it does nothing, and
+// `qbsk check` says so — which is why it comes first in each layer here.
+
+scene Art(width: 24, height: 8, title: "tour: drawing")
+
+layer background z: 0
+    fill " "
+
+layer shapes z: 5
+    color fg: cyan
+    box (1, 1) to (10, 5) style: double
+    line (12, 1) to (22, 5)
+    text "QBSK" at (14, 6)
+
+layer marks z: 10
+    color fg: bright-yellow
+    put "*" at (5, 3)

@@ -1,0 +1,15 @@
+// color.qbsk — M13: layer styles; plain text ignores color (goldens
+// intact), but `qbsk run --ansi color.qbsk` emits it with truecolor
+scene ColorDemo(width: 34, height: 9)
+
+layer base z: 1
+    fill "."
+
+layer styled z: 2
+    color fg: cyan bg: black
+    border (0, 0) to (33, 8) style: rounded
+    text "color fg: cyan bg: black" at (1, 1)
+    color fg: bright-yellow
+    text "then only fg changes" at (1, 3)
+    color fg: red bg: blue
+    line (1, 5) to (32, 5)

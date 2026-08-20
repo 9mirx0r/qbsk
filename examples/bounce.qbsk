@@ -1,0 +1,12 @@
+// bounce.qbsk — M14: sprite bouncing with the game clock (frame loop)
+//   qbsk run --ansi --loop --fps 20 --frames 120 examples/bounce.qbsk
+//   qbsk profile examples/bounce.qbsk --frames 300
+scene Bounce(width: 30, height: 10)
+
+layer back z: 1
+    fill "."
+    border (0, 0) to (29, 9) style: single
+
+layer ball z: 2
+    color fg: bright-yellow
+    sprite "res/ball.qba" at (int(gameTime() * 10) % 26 + 1, 4)

@@ -1,0 +1,80 @@
+// audio.qbsk — the five waveforms, and how a tone knows when to fire.
+//
+// A `tone` is a primitive like `put` or `box`: it lives in a layer and obeys the
+// same state directives. What it does not do is paint — it contributes to the
+// frame's audio plan instead, so this scene draws its own soundtrack.
+//
+// The trigger rule is the interesting part. Re-composing a tone with identical
+// parameters CONTINUES it; it does not retrigger. That is why a tone declared
+// unconditionally sounds once at scene start rather than sixty times a second,
+// and it is the same continue/restart rule the tweens use.
+//
+//   qbsk run --ansi --loop examples/audio.qbsk --fps 20
+//   qbsk run --no-audio examples/audio.qbsk     (silent, otherwise identical)
+scene Audio(width: 64, height: 18)
+
+// Each waveform gets a slot in the sequence. `timeline_active` says which one is
+// sounding now, and gating each tone on that is what makes them fire in turn
+// instead of all at once.
+const waves = timeline_sequence([
+    timeline_step("sine", 1.2),
+    timeline_step("square", 1.2),
+    timeline_step("triangle", 1.2),
+    timeline_step("sawtooth", 1.2),
+    timeline_step("noise", 1.2),
+    timeline_wait(1.0),
+])
+
+var now = ""
+
+on tick(dt)
+    var active = timeline_active(waves, gameTime() % timeline_duration(waves))
+    if len(active) > 0
+        now = active[0]
+    else
+        now = ""
+
+layer frame z: 0
+    color bg: black fg: bright-black
+    fill " "
+    border (0, 0) to (63, 17) style: double
+    put " QBSK audio - five waveforms " at (17, 0)
+    put "each tone fires when its step becomes active" at (10, 15)
+
+// One tone per waveform, each gated on its own step. A gated-out tone is absent
+// from the plan entirely, so when it reappears the device treats it as new and
+// plays it — the dialogue-beep pattern, in miniature.
+layer voices z: 1
+    color fg: bright-cyan
+    visible: now == "sine"
+    tone 440 wave: sine duration: 1.0 volume: 0.4
+    put "sine      440 Hz  ~~~~~~~~" at (18, 4)
+
+    visible: now == "square"
+    tone 330 wave: square duration: 1.0 volume: 0.4
+    put "square    330 Hz  _|-|_|-|" at (18, 6)
+
+    visible: now == "triangle"
+    tone 262 wave: triangle duration: 1.0 volume: 0.4
+    put "triangle  262 Hz  /\\/\\/\\/\\" at (18, 8)
+
+    visible: now == "sawtooth"
+    tone 196 wave: sawtooth duration: 1.0 volume: 0.4
+    put "sawtooth  196 Hz  /|/|/|/|" at (18, 10)
+
+    visible: now == "noise"
+    tone 800 wave: noise duration: 1.0 volume: 0.3
+    put "noise     seeded  ::.:.::." at (18, 12)
+
+layer cursor z: 2
+    color fg: yellow
+    visible: now == "sine"
+    put ">" at (15, 4)
+    visible: now == "square"
+    put ">" at (15, 6)
+    visible: now == "triangle"
+    put ">" at (15, 8)
+    visible: now == "sawtooth"
+    put ">" at (15, 10)
+    visible: now == "noise"
+    put ">" at (15, 12)

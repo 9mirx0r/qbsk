@@ -1,0 +1,71 @@
+// action_rules.qbsk — a QBSK-language Action + Rules engine.
+//
+// Phase 29 (the roadmap), reopening the CDDA/Qud audit's
+// "D2: Action/Rules" item (the roadmap §4.3, §5.2) — the item right
+// after D1 (ECS Foundation, src/ecs/, still unwired: no real scene has measured a need
+// for it, see the D1-D5 "NOT adopted" decision above). D2 does not have that problem:
+// it is built here, from scratch, as an ordinary QBSK library — zero new natives, zero
+// new syntax — per this project's "QBSK libraries first, natives last resort" principle.
+// The only primitive it needs already exists: first-class functions (docs/language.md
+// §5.3 — "map(l, fn)... first-class functions... a named function defined with func").
+// A rule IS a QBSK function value, stored in a plain list, called through a variable.
+//
+// The model (Qud's Action/Rules, cited in full in the audit doc, gridbugs.org): actions
+// are dicts waiting to happen; rules are functions that veto or allow them; an accepted
+// action may enqueue follow-on actions (bump -> open -> reveal; exile -> flee -> ...).
+// This library is the generic loop only — what an action MEANS, and what accepting it
+// actually changes in the world, is entirely up to the rule functions the caller writes.
+// That is deliberate, the same restraint Phase 27/28 both used: a generic "apply these
+// changes to any entity" primitive is not built until a second real caller needs one —
+// examples/worldgen_test.qbsk (Phase 29's own closing evidence) is the first.
+//
+// Contract a rule function must follow:
+//   func myRule(action, state, pending) -> dict
+//     "action"  — the dict currently being processed (whatever shape the caller chose)
+//     "state"   — whatever shared state the caller passed to process(); read or mutate
+//                 through it directly (dicts/lists are by-reference, docs/language.md
+//                 §5.3) — this library never touches it. A rule that closes over the
+//                 caller's own top-level vars instead (proven safe: docs/language.md
+//                 line ~535, "assignments to outer variables persist") can ignore this
+//                 parameter — examples/worldgen_test.qbsk's rules do exactly that.
+//     "pending" — the SAME list process() is draining; push(pending, followOnAction) to
+//                 enqueue a follow-on, exactly like Qud's follow_on_accepted queue
+//     returns {"accept": bool} — false from ANY rule drops the action for good. A rule
+//     indifferent to an action's type should default to {"accept": true} (no opinion),
+//     not reject — rejecting is a veto, and only the rule that owns that action type
+//     should ever cast one.
+//
+// Note: the natural parameter name for the third argument would be "world", but that's
+// a reserved scene-DSL keyword (src/parser/parser.ts's SCENE_DSL_TOKENS) — "state" is
+// used instead, everywhere in this file and in every caller.
+
+export func process(pending, rules, state)
+    var committed = []
+    var rejected = []
+    var i = 0
+    while i < len(pending)
+        var action = pending[i]
+        var accepted = true
+        var j = 0
+        while j < len(rules)
+            var rule = rules[j]
+            var verdict = rule(action, state, pending)
+            // The header promises `{"accept": bool}` and nothing checked it, while
+            // `not verdict["accept"]` fell back to truthiness -- so a rule returning the
+            // STRING "no" COMMITTED the action. The rule said no and the engine did it.
+            //
+            // That is the worst shape a defect takes here, because the veto's whole
+            // point is that one rule can stop an action and no other rule's opinion
+            // overrides it. A type slip inverted it silently, and the action went
+            // through looking exactly like one every rule had approved.
+            if type(verdict["accept"]) != "bool"
+                fail("rule " + str(j) + " answered accept as a " + type(verdict["accept"]) + ", and a verdict is a bool -- a non-bool decided by truthiness, so a rule could veto and be committed anyway")
+            if not verdict["accept"]
+                accepted = false
+            j += 1
+        if accepted
+            committed = push(committed, action)
+        else
+            rejected = push(rejected, action)
+        i += 1
+    return {"committed": committed, "rejected": rejected}

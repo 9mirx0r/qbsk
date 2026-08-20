@@ -1,0 +1,48 @@
+// worldgen_concepts.qbdata — Phase 28: the shared root-concept pool.
+//
+// Original QBSK content, inspired by the MECHANISM Dwarf Fortress's Language system
+// uses (14-dwarf-fortress-worldgen-research.md §2: one shared pool of root concepts,
+// each culture translates the same concept into its own sound) — never a copy of DF's
+// actual word list, which this project has no access to and would not copy if it did
+// (16-qbsk-worldgen-design.md §4a).
+//
+// Every culture in worldgen_cultures.qbdata draws its names from a FILTERED subset of
+// this pool (by category), the same way a Dwarven name leans on "martial" concepts and
+// never draws from "domestic" ones.
+//
+// Recorded debt (Phase 28 closure): the original 12-concept pool gave each culture only
+// 6 candidates, measured at 38% collision (62/100 unique) in a batch test. This is the
+// fix — 26 concepts total, chosen so every one of the 15 possible category-pairs has at
+// least one entry, taking each culture from 6 to 13-15 candidates. See
+// bench/worldgen-names-gen.mjs for the paired switch to 3-concept names (was 2), and the
+// new honest collision number this combination measures at.
+
+shape concept
+    categories: list
+
+STONE   = {"categories": ["martial", "enduring"]}
+IRON    = {"categories": ["martial", "enduring"]}
+FLINT   = {"categories": ["martial", "enduring"]}
+WOLF    = {"categories": ["martial", "wild"]}
+STORM   = {"categories": ["martial", "wild"]}
+EAGLE   = {"categories": ["martial", "wild"]}
+ANVIL   = {"categories": ["martial", "domestic"]}
+SPEAR   = {"categories": ["martial", "trade"]}
+BANNER  = {"categories": ["martial", "omen"]}
+FROST   = {"categories": ["enduring", "wild"]}
+ASH     = {"categories": ["domestic", "enduring"]}
+OAK     = {"categories": ["domestic", "enduring"]}
+CEDAR   = {"categories": ["domestic", "enduring"]}
+HEARTH  = {"categories": ["enduring", "trade"]}
+VOW     = {"categories": ["enduring", "omen"]}
+RAVEN   = {"categories": ["wild", "omen"]}
+MOON    = {"categories": ["omen", "wild"]}
+TIDE    = {"categories": ["wild", "omen"]}
+THORN   = {"categories": ["wild", "domestic"]}
+HAWK    = {"categories": ["wild", "trade"]}
+BROOK   = {"categories": ["domestic", "trade"]}
+VALE    = {"categories": ["domestic", "trade"]}
+WILLOW  = {"categories": ["domestic", "trade"]}
+GRAIN   = {"categories": ["domestic", "trade"]}
+LANTERN = {"categories": ["domestic", "omen"]}
+EMBER   = {"categories": ["trade", "omen"]}

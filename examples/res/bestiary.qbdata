@@ -1,0 +1,20 @@
+// bestiary.qbdata — what lives in the dark.
+//
+// A DATA file: it holds literals and cannot run anything (docs/language.md §12). That
+// is the point. A `.qbsk` module would serve this data equally well and would also
+// execute its top level when loaded, which is fine for a file you wrote and wrong for
+// one you were given.
+//
+// The shape below is checked at LOAD. Misspell `hp` as `hpp` and this file reports, on
+// its own line, before a frame has run — rather than three turns later in whatever went
+// looking for the key.
+
+shape creature
+    kind: str
+    glyph: str
+    hp: int
+    sight: int
+
+GOBLIN = {"kind": "goblin", "glyph": "g", "hp": 3, "sight": 40}
+RAT    = {"kind": "rat",    "glyph": "r", "hp": 1, "sight": 12}
+OGRE   = {"kind": "ogre",   "glyph": "O", "hp": 12, "sight": 25}

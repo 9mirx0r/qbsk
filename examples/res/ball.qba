@@ -1,0 +1,5 @@
+# ball.qba — 3×3 ball (M14, frame loop demo)
+META name: ball
+ o 
+/|\
+/ \

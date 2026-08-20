@@ -1,0 +1,4 @@
+export const greeting = "hello from lib"
+
+export func double(n)
+    return n * 2

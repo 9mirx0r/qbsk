@@ -1,0 +1,109 @@
+// lighting.qbsk — one room, four lights, in sequence.
+//
+// The ROOM never changes. Watch it run: it is drawn once, and only the shade on top
+// cycles through four looks on a timeline. That is what a shade is — a re-colouring
+// of what the primitives already painted. (The label at the bottom does change: it
+// names the current light, so you can tell them apart without guessing.)
+//
+// Note that shades are SCENE-WIDE, not per-layer: a shade is a post-process over
+// the whole composed canvas, the same way "grade the scene for night" means the
+// whole scene. That is why this example cycles one room through four lights instead
+// of showing four rooms side by side — side by side, every shade would spill onto
+// every panel.
+//   qbsk run --ansi --loop examples/lighting.qbsk --fps 20
+scene Lighting(width: 64, height: 22)
+
+const lights = timeline_sequence([
+    timeline_step("plain", 3.0),
+    timeline_step("torch", 5.0),
+    timeline_step("night", 3.5),
+    // During the alarm, the red pulse AND a strobe run in PARALLEL (timeline_parallel).
+    timeline_parallel([
+        timeline_step("alarm", 4.0),
+        timeline_step("strobe", 4.0),
+    ]),
+])
+
+var mode = "plain"
+var prevMode = "plain"
+
+// The torch swings, so the radial light has somewhere to travel.
+var torchX = 20.0
+var torchA = 10.0
+var torchB = 50.0
+
+on tick(dt)
+    var active = timeline_active(lights, gameTime() % timeline_duration(lights))
+    if len(active) > 0
+        mode = active[0]
+    else
+        mode = "plain"
+
+    // Re-entering the torch rewinds the swing, so each torch episode starts
+    // from the same point instead of resuming mid-arc (animate_reset).
+    if mode == "torch" and prevMode != "torch"
+        animate_reset("swing")
+    prevMode = mode
+
+    if animate_done("swing")
+        var t = torchA
+        torchA = torchB
+        torchB = t
+    torchX = animate("swing", torchA, torchB, 5.0, "ease-in-out")
+
+// --- the room, drawn once and never redrawn differently ----------------------
+
+layer room z: 1
+    color bg: black fg: bright-black
+    fill " "
+    border (0, 0) to (63, 21) style: double
+    color fg: bright-white
+    put "+==============+" at (8, 4)
+    put "|              |" at (8, 5)
+    put "|   +------+   |" at (8, 6)
+    put "|   |      |   |" at (8, 7)
+    put "|   |  []  |   |" at (8, 8)
+    put "|   +------+   |" at (8, 9)
+    put "|              |" at (8, 10)
+    put "+==============+" at (8, 11)
+    put "+==============+" at (40, 4)
+    put "|              |" at (40, 5)
+    put "|   +------+   |" at (40, 6)
+    put "|   |      |   |" at (40, 7)
+    put "|   |  ()  |   |" at (40, 8)
+    put "|   +------+   |" at (40, 9)
+    put "|              |" at (40, 10)
+    put "+==============+" at (40, 11)
+    color fg: bright-cyan
+    put " o " at (30, 14)
+    put "/|\\" at (30, 15)
+    put "/ \\" at (30, 16)
+    color fg: bright-green
+    put "________________________________________________" at (8, 18)
+
+// --- the light, and only the light -------------------------------------------
+
+layer light z: 2
+    // A torch: `radial` falls off from a point, and the point moves.
+    visible: mode == "torch"
+    shade radial x: torchX y: 14 radius: 22 tint: bright-yellow strength: 0.9
+
+    // Night: `grade` is uniform, so a cold wash reads as moonlight.
+    visible: mode == "night"
+    shade grade tint: blue strength: 0.7
+
+    // Alarm: `pulse` breathes on the GAME clock, so it looks the same at 20 fps
+    // and at 60. Stacked with scanline for a failing-monitor feel.
+    visible: mode == "alarm"
+    shade pulse speed: 1.4 tint: bright-red strength: 0.75
+    visible: mode == "alarm"
+    shade scanline strength: 0.4
+
+    // Strobe runs in PARALLEL with alarm (timeline_parallel): a fast flash.
+    visible: mode == "strobe"
+    shade pulse speed: 8.0 tint: bright-white strength: 0.9
+
+layer label z: 3
+    color fg: bright-black
+    put "light: {mode}" at (2, 20)
+    put "the characters never change - only the colour does" at (12, 20)

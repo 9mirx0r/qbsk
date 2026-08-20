@@ -1,0 +1,216 @@
+// crypt.qbsk — a complete little roguelike: you can win, you can lose, you can quit.
+//
+//   qbsk run examples/crypt.qbsk --ansi --loop --fps 20
+//
+// Written to answer one question honestly: what does QBSK still lack for a real game?
+// Everything here uses only what the language and engine already provide — seeded
+// generation, FOV, A*, turns, and the loop fixes from docs/engine.md §18.
+//
+// Grab the amulet and reach the stairs. Two skeletons want otherwise.
+
+const W = 40
+const H = 16
+const SEED = 20260814
+
+// ---------------------------------------------------------------------------
+// The map. Rows of text: the same shape sight() and path() read.
+// ---------------------------------------------------------------------------
+
+const MAP = [
+    "########################################",
+    "#....#........#...........#............#",
+    "#....#........#...........#............#",
+    "#....#####.####...####.####.####.#######",
+    "#........#....#......#....#....#.......#",
+    "#........#....#......#....#....#.......#",
+    "####.#####....####.###....######.#######",
+    "#......................................#",
+    "#......................................#",
+    "####.##########.####.####.######.#######",
+    "#......#.......#....#....#.#...........#",
+    "#......#.......#....#....#.#...........#",
+    "#......................................#",
+    "#......#.......#....#....#.#...........#",
+    "#......#.......#....#....#.#...........#",
+    "########################################",
+]
+
+func walkable(x, y)
+    if x < 0 or y < 0 or x > W - 1 or y > H - 1
+        return false
+    var row = MAP[y]
+    return row[x] != "#"
+
+// ---------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------
+
+var playerX = 2
+var playerY = 1
+var hp = 6
+var hasAmulet = false
+var over = ""
+var log = "the crypt is cold."
+
+const AMULET_X = 37
+const AMULET_Y = 14
+const STAIRS_X = 2
+const STAIRS_Y = 14
+
+var monsters = [
+    {"x": 30, "y": 4, "hp": 3, "glyph": "s"},
+    {"x": 20, "y": 12, "hp": 3, "glyph": "s"},
+]
+
+var seen = sight(MAP, (playerX, playerY), 9, "#")
+
+// ---------------------------------------------------------------------------
+// Actions
+// ---------------------------------------------------------------------------
+
+func monsterAt(x, y)
+    for i, m in monsters
+        if m["x"] == x and m["y"] == y and m["hp"] > 0
+            return i
+    return -1
+
+func look()
+    seen = sight(MAP, (playerX, playerY), 9, "#")
+
+func walk(dx, dy)
+    if over != ""
+        return 0
+    var nx = playerX + dx
+    var ny = playerY + dy
+    var hit = monsterAt(nx, ny)
+    if hit >= 0
+        var m = monsters[hit]
+        monsters[hit] = {"x": m["x"], "y": m["y"], "hp": m["hp"] - 1, "glyph": m["glyph"]}
+        if monsters[hit]["hp"] <= 0
+            log = "the skeleton falls."
+        else
+            log = "you strike the skeleton."
+        advance()
+        return 0
+    if not walkable(nx, ny)
+        log = "stone."
+        return 0
+    playerX = nx
+    playerY = ny
+    look()
+    if not hasAmulet and playerX == AMULET_X and playerY == AMULET_Y
+        hasAmulet = true
+        log = "the amulet is yours. run."
+    if hasAmulet and playerX == STAIRS_X and playerY == STAIRS_Y
+        over = "win"
+        log = "you climb out with the amulet."
+    advance()
+    return 0
+
+// ---------------------------------------------------------------------------
+// The world takes its turn because you took yours
+// ---------------------------------------------------------------------------
+
+// NOTE (friction found writing this): `return` is not allowed inside an `on` handler —
+// a handler is not a function, so there is no early exit. `qbsk check` does not catch
+// it either; the program dies at runtime the first time the handler runs. Everything
+// below is therefore wrapped in `if over == ""` instead of guarded with an early return.
+on turn(n)
+    if over == ""
+        var next = []
+        for m in monsters
+            if m["hp"] <= 0
+                next = push(next, m)
+            else
+                var mx = m["x"]
+                var my = m["y"]
+                if abs(mx - playerX) + abs(my - playerY) == 1
+                    hp = hp - 1
+                    log = "the skeleton claws you."
+                    if hp <= 0
+                        over = "lose"
+                        log = "you die in the dark."
+                    next = push(next, m)
+                else
+                    var route = path(MAP, (mx, my), (playerX, playerY), "#", false)
+                    if len(route) > 1 and len(route) < 40
+                        var stepTo = route[1]
+                        if monsterAt(stepTo[0], stepTo[1]) < 0
+                            next = push(next, {"x": stepTo[0], "y": stepTo[1], "hp": m["hp"], "glyph": m["glyph"]})
+                        else
+                            next = push(next, m)
+                    else
+                        next = push(next, m)
+        monsters = next
+
+// ---------------------------------------------------------------------------
+// Input
+// ---------------------------------------------------------------------------
+
+on key "arrow-left"
+    walk(-1, 0)
+on key "arrow-right"
+    walk(1, 0)
+on key "arrow-up"
+    walk(0, -1)
+on key "arrow-down"
+    walk(0, 1)
+
+on key "space"
+    if over == ""
+        log = "you wait."
+        advance()
+
+on key "q"
+    exit(0)
+
+// ---------------------------------------------------------------------------
+// The screen
+// ---------------------------------------------------------------------------
+
+scene Crypt(width: W, height: H + 4, title: "the crypt", fps: 20)
+
+layer floor z: 0
+    fill " "
+    color fg: bright-black
+    // The map never moves; what you can see does. One composite instead of 640
+    // interpreted cells per frame (docs/engine.md §11.12) — `sight` already answers
+    // in the alphabet the mask wants, a space where you cannot see.
+    put MAP at (0, 0) mask: seen
+
+layer items z: 3
+    color fg: bright-yellow
+    if not hasAmulet and seen[AMULET_Y][AMULET_X] != " "
+        put "*" at (AMULET_X, AMULET_Y)
+    color fg: bright-green
+    if hasAmulet
+        put ">" at (STAIRS_X, STAIRS_Y)
+
+layer creatures z: 5
+    color fg: bright-white
+    for m in monsters
+        if m["hp"] > 0 and seen[m["y"]][m["x"]] != " "
+            put m["glyph"] at (m["x"], m["y"])
+
+layer hero z: 8
+    color fg: bright-cyan
+    if over != "lose"
+        put "@" at (playerX, playerY)
+
+layer hud z: 20
+    color fg: bright-white
+    text "hp " + str(hp) + "   turn " + str(turn()) at (1, H)
+    color fg: bright-yellow
+    if hasAmulet
+        text "amulet" at (14, H)
+    color fg: bright-black
+    text log at (1, H + 1)
+    text "arrows move and attack   space waits   q quits" at (1, H + 2)
+
+layer ending z: 30
+    if over == "win"
+        color fg: bright-green
+        text "YOU ESCAPED - press q" at (10, H + 3)
+    if over == "lose"
+        color fg: red
+        text "YOU DIED - press q" at (10, H + 3)

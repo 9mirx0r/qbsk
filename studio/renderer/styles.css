@@ -1,0 +1,504 @@
+/* The project font (font/LICENSE.md): GNU Unifont, used under SIL OFL 1.1.
+   One consistent hand for box-drawing, blocks and arrows instead of whatever the
+   system would substitute. Designed on a 16px grid — crispest at 16 and at
+   multiples of 8, which is why play mode snaps to that grid. */
+@font-face {
+  font-family: "QBSK Unifont";
+  src: url("./font/unifont-17.0.05.otf") format("opentype");
+  font-display: block;
+}
+
+@font-face {
+  font-family: "QBSK Iosevka";
+  src: url("./font/Iosevka-Regular.ttf") format("truetype");
+  font-display: block;
+}
+
+@font-face {
+  font-family: "QBSK JetBrains Mono";
+  src: url("./font/JetBrainsMono-Regular.ttf") format("truetype");
+  font-display: block;
+}
+
+@font-face {
+  font-family: "QBSK IBM Plex Mono";
+  src: url("./font/IBMPlexMono-Regular.ttf") format("truetype");
+  font-display: block;
+}
+
+/* QBSK Studio chrome — approved visual reference (docs/studio.md §8).
+   90s beveled chrome in a dark navy marine palette. Hard corners everywhere:
+   no border-radius on the app chrome. Content panes stay flat. */
+
+:root {
+  --face: #16334f;
+  --panel: #1b3a5c;
+  --deep: #061420;
+  --bev-high: #5c8db8;
+  --bev-light: #4a7ba7;
+  --bev-dark: #04101c;
+  --text: #d6e4f0;
+  --dim: #a8c4dc;
+  --gutter: #5b7a99;
+  --kw: #f0a500;
+  --name: #7fd4ff;
+  --str: #c8e6a0;
+  --num: #e8a0c0;
+  --arg: #9ecb7a;
+  --dot: #3f5f7a;
+  --ok: #9ecb7a;
+  --font: "QBSK Unifont", "Cascadia Mono", Consolas, ui-monospace, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--face);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 12px;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* --- Title bar: period-correct gradient --- */
+
+#titlebar {
+  flex: none;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  background: linear-gradient(90deg, #0a2740, #1e5182 60%, #2a6ba8);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/* --- Menu bar --- */
+
+#menubar {
+  flex: none;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 6px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--bev-dark);
+}
+
+.menu-item {
+  padding: 2px 8px;
+  color: var(--dim);
+  cursor: default;
+  transition: background-color 110ms ease, color 110ms ease;
+}
+
+.menu-item:hover {
+  background: var(--face);
+  color: var(--text);
+}
+
+/* --- Icon toolbar: raised bevel buttons, groups split by beveled separators --- */
+
+#toolbar {
+  flex: none;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 6px;
+  background: linear-gradient(180deg, #1f4569, #16334f);
+}
+
+.tb-btn {
+  width: 26px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: var(--face);
+  color: var(--dim);
+  border: 2px solid;
+  border-color: var(--bev-light) var(--bev-light) var(--bev-dark) var(--bev-dark);
+  cursor: pointer;
+  transition: background-color 110ms ease, color 110ms ease;
+}
+
+.tb-btn:hover {
+  background: #1f4569;
+  color: var(--text);
+}
+
+.tb-btn:active {
+  border-color: var(--bev-dark) var(--bev-light) var(--bev-light) var(--bev-dark);
+  transform: translate(1px, 1px);
+}
+
+.tb-btn:focus-visible {
+  outline: 1px solid var(--name);
+  outline-offset: -1px;
+}
+
+.tb-sep {
+  align-self: stretch;
+  width: 0;
+  margin: 3px 4px;
+  border-left: 1px solid var(--bev-high);
+  border-right: 1px solid var(--bev-dark);
+}
+
+/* --- Panes: sunken content, flat faces --- */
+
+.pane {
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 2px solid;
+  border-color: var(--bev-dark) var(--bev-light) var(--bev-light) var(--bev-dark);
+}
+
+.pane-caption {
+  flex: none;
+  padding: 2px 8px;
+  background: linear-gradient(180deg, #1a4066, #0f2a44);
+  color: var(--dim);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* --- Editor | inspector row --- */
+
+#midrow {
+  flex: 0 0 30%;
+  min-height: 110px;
+  display: flex;
+  padding: 5px 5px 0;
+}
+
+#editorPane {
+  flex: 1.15;
+  margin-right: 2px;
+  min-width: 0;
+}
+
+#inspectorPane {
+  flex: 0.85;
+  margin-left: 2px;
+  min-width: 0;
+}
+
+#editor {
+  flex: 1;
+  border: none;
+  outline: none;
+  resize: none;
+  padding: 8px;
+  background: var(--deep);
+  color: var(--text);
+  caret-color: var(--name);
+  font-family: var(--font);
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre;
+  user-select: text;
+}
+
+#inspector {
+  flex: 1;
+  padding: 4px 6px;
+  background: var(--deep);
+  color: var(--dim);
+  font-size: 11px;
+  overflow: auto;
+}
+
+.ins-empty {
+  color: var(--gutter);
+}
+
+/* --- Canvas: full width, flat, dotted grid backdrop --- */
+
+#canvasPane {
+  flex: 1 1 auto;
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  margin: 0 5px;
+}
+
+#canvasWrap {
+  flex: 1;
+  margin-top: 3px;
+  background-color: var(--deep);
+  background-image: radial-gradient(
+    circle at 7px 7px,
+    rgba(63, 95, 122, 0.45) 1px,
+    transparent 1.3px
+  );
+  background-size: 14px 14px;
+  border: 2px solid;
+  border-color: var(--bev-dark) var(--bev-light) var(--bev-light) var(--bev-dark);
+  overflow: auto;
+  padding: 10px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.dom-grid {
+  display: grid;
+  font-family: var(--grid-font, var(--font));
+  font-size: var(--grid-size, 16px);
+  line-height: 1.15;
+  user-select: none;
+}
+
+.cell {
+  width: 1ch;
+  height: 1.15em;
+  white-space: pre;
+  overflow: hidden;
+}
+
+/* --- MCP activity: the visible proof the agent is working inside --- */
+
+#mcpPane {
+  flex: none;
+  height: 96px;
+  display: flex;
+  flex-direction: column;
+  margin: 2px 5px 0;
+}
+
+#mcpLog {
+  flex: 1;
+  margin-top: 3px;
+  padding: 4px 8px;
+  background: var(--deep);
+  border: 2px solid;
+  border-color: var(--bev-dark) var(--bev-light) var(--bev-light) var(--bev-dark);
+  font-size: 11px;
+  overflow: auto;
+  user-select: text;
+}
+
+.log-call {
+  color: var(--name);
+}
+
+.log-ok {
+  color: var(--ok);
+}
+
+.log-err {
+  color: var(--kw);
+}
+
+/* --- Status bar: fps and ms/frame always visible --- */
+
+#statusbar {
+  flex: none;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 8px;
+  background: linear-gradient(180deg, #1f4569, #16334f);
+  color: var(--dim);
+  font-size: 11px;
+}
+
+.st-file {
+  color: var(--text);
+}
+
+.st-spacer {
+  flex: 1;
+}
+
+#stMcp {
+  color: var(--gutter);
+}
+
+/* --- Play mode (docs/studio.md §13): hide the chrome, let the grid fill --- */
+body.play > #titlebar,
+body.play > #menubar,
+body.play > #toolbar,
+body.play > #midrow,
+body.play > #mcpPane,
+body.play > #statusbar,
+body.play #canvasCaption {
+  display: none;
+}
+
+body.play {
+  background: #000;
+}
+
+body.play > #canvasPane {
+  margin: 0;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+body.play #canvasWrap {
+  background: #000;
+  border: none;
+  padding: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* A quiet hint, so leaving play mode is discoverable. Fades out on its own. */
+#playHint {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-family: var(--font);
+  font-size: 11px;
+  color: #4a7ba7;
+  opacity: 0;
+  transition: opacity 400ms ease;
+  pointer-events: none;
+}
+
+body.play #playHint {
+  opacity: 1;
+  animation: playHintFade 2.6s ease forwards;
+}
+
+@keyframes playHintFade {
+  0% { opacity: 1; }
+  70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Connected is a state worth seeing at a glance, not just reading. */
+#stMcp.mcp-on {
+  color: var(--ok);
+}
+
+/* --- Engine settings (docs/studio.md §14) --- */
+#settingsBackdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 16, 28, 0.62);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+#settingsBackdrop[hidden] {
+  display: none;
+}
+
+#settingsDialog {
+  width: 420px;
+  max-width: 92%;
+  background: var(--face);
+  border: 2px solid;
+  border-color: var(--bev-high) var(--bev-dark) var(--bev-dark) var(--bev-high);
+}
+
+#settingsTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 4px 4px 10px;
+  background: linear-gradient(90deg, #0a2740, #1e5182 60%, #2a6ba8);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.set-section {
+  margin: 8px;
+  padding: 8px;
+  background: var(--panel);
+  border: 2px solid;
+  border-color: var(--bev-dark) var(--bev-light) var(--bev-light) var(--bev-dark);
+}
+
+.set-head {
+  margin: -8px -8px 8px;
+  padding: 2px 8px;
+  background: linear-gradient(180deg, #1a4066, #0f2a44);
+  color: var(--dim);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.set-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 11px;
+  color: var(--dim);
+}
+
+.set-row label {
+  flex: 0 0 104px;
+}
+
+.set-row select,
+.set-row input[type="range"] {
+  flex: 1;
+  min-width: 0;
+}
+
+.set-row select {
+  padding: 2px 4px;
+  background: var(--deep);
+  color: var(--text);
+  border: 2px solid;
+  border-color: var(--bev-dark) var(--bev-light) var(--bev-light) var(--bev-dark);
+  font-family: var(--font);
+  font-size: 11px;
+}
+
+.set-note {
+  margin: 4px 0 8px;
+  color: var(--gutter);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.set-preview {
+  padding: 8px;
+  background: var(--deep);
+  border: 2px solid;
+  border-color: var(--bev-dark) var(--bev-light) var(--bev-light) var(--bev-dark);
+  color: var(--name);
+  white-space: pre;
+  overflow-x: auto;
+}
+
+/* Key binding buttons in engine settings (docs/studio.md §14.5). */
+.set-bind {
+  font: inherit;
+  min-width: 7rem;
+  padding: 0.15rem 0.6rem;
+  color: inherit;
+  background: #0d1b2a;
+  border: 1px solid #2f4f6f;
+  cursor: pointer;
+}
+.set-bind:hover {
+  border-color: #6ea8d8;
+}

@@ -1,0 +1,18 @@
+// worldgen_locations.qbdata — Phase 27 (structure) + Phase 28 (generated `name`,
+// bench/worldgen-names-gen.mjs). `key` stays the internal identifier; `name` is
+// the phoneme-generated display name — regenerate: node bench/worldgen-names-gen.mjs 27
+//
+// A real terrain-field pipeline and a CDDA-style placement engine are both out of
+// scope (see Phase 27's scope exclusions) — positions here are still hand-placed.
+
+shape location
+    key: str
+    name: str
+    glyph: str
+    x: int
+    y: int
+    founded_turn: int
+
+ASHFORD = {"key": "ashford", "name": "Gornthekdun", "glyph": "A", "x": 8, "y": 4, "founded_turn": 0}
+MILLBROOK = {"key": "millbrook", "name": "Ezfeniasira", "glyph": "M", "x": 20, "y": 8, "founded_turn": 0}
+CAIRN_HOLLOW = {"key": "cairn_hollow", "name": "Ruunverakzurak", "glyph": "C", "x": 32, "y": 5, "founded_turn": 0}

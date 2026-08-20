@@ -1,0 +1,8 @@
+// Fixture for §17.1: the module contract as v0.1 freezes it.
+// `helper` is exported and reachable; `secret` is not exported and is not.
+const secret = 42
+
+export const answer = 7
+
+export func helper(n)
+    return n + secret

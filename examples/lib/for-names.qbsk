@@ -1,0 +1,81 @@
+// A module whose every exported name is one of §15.15's twenty-six scene words.
+// Exists so `tests/unit/contextual-keywords.test.ts` can reach a MEMBER name of each,
+// which is a position the rule claims and could not reach through a dict key.
+
+export func at()
+    return 7
+
+export func from()
+    return 7
+
+export func to()
+    return 7
+
+export func style()
+    return 7
+
+export func world()
+    return 7
+
+export func start()
+    return 7
+
+export func tick()
+    return 7
+
+export func key()
+    return 7
+
+export func resize()
+    return 7
+
+export func scene()
+    return 7
+
+export func layer()
+    return 7
+
+export func sprite()
+    return 7
+
+export func box()
+    return 7
+
+export func border()
+    return 7
+
+export func line()
+    return 7
+
+export func text()
+    return 7
+
+export func tone()
+    return 7
+
+export func shade()
+    return 7
+
+export func fill()
+    return 7
+
+export func put()
+    return 7
+
+export func canvas()
+    return 7
+
+export func color()
+    return 7
+
+export func anchor()
+    return 7
+
+export func z()
+    return 7
+
+export func visible()
+    return 7
+
+export func on()
+    return 7

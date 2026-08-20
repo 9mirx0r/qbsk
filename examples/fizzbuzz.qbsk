@@ -1,0 +1,14 @@
+// FizzBuzz in QBSK (M4 — interpreter)
+
+func is_divisible(a, b)
+    return a % b == 0
+
+for i in 1..101
+    if is_divisible(i, 15)
+        print("FizzBuzz")
+    elif is_divisible(i, 3)
+        print("Fizz")
+    elif is_divisible(i, 5)
+        print("Buzz")
+    else
+        print(i)

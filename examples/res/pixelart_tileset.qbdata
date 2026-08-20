@@ -1,0 +1,27 @@
+// pixelart_tileset.qbdata — maps glyphs to PROCEDURALLY GENERATED SVGs
+// (bench/sprite-gen.mjs, examples/lib/pixelart.qbsk — Phase 32), not hand-drawn ones.
+// Same shape as examples/res/tiles.qbdata (Phase 24) — this reuses that renderer
+// unchanged; the only thing new is where the images came from.
+//
+// "c" (creature) is the free-form symmetric blob generate() produces — no target
+// shape, pure noise+smoothing+symmetry. "s" (sword), "o" (orc), "e" (demon, "enemy" —
+// "d" collides with nothing here but "e" reads clearer next to "o") are mask-gated
+// generateMasked() output — a hand-authored silhouette constrains WHERE the shape can
+// be, generation only decides texture within it. orc/demon share the exact same
+// silhouette (src/tools/spriteGen.ts's HUMANOID_ROWS) and differ only by palette — a
+// player-character/enemy pair meant to occupy one tile each on the map, same as any
+// other creature would. All four sprites are outlined (Phase 32b), found necessary by
+// comparing against Dwarf Fortress's own item/creature graphics: an un-outlined fill
+// reads as raw noise, not as an intentional object.
+//
+// Pick this file in QBSK Studio's Engine settings to see them painted over the
+// corresponding cells in examples/pixelart_test.qbsk.
+
+shape tile
+    glyph: str
+    image: str
+
+CREATURE = {"glyph": "c", "image": "sprites/creature.svg"}
+SWORD = {"glyph": "s", "image": "sprites/sword.svg"}
+ORC = {"glyph": "o", "image": "sprites/orc.svg"}
+DEMON = {"glyph": "e", "image": "sprites/demon.svg"}

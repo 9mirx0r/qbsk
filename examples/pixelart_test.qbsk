@@ -1,0 +1,44 @@
+// pixelart_test.qbsk — Phase 32: four PROCEDURALLY GENERATED sprites through Phase 24's
+// existing tileset renderer (docs/engine.md §15), zero renderer changes needed — that
+// was the whole point of choosing SVG output (06-active-language-phases.md's Phase 32
+// design §1/§3).
+//
+// "c" (creature) is examples/lib/pixelart.qbsk's free-form generate() — symmetric
+// coherence-seeking noise, no target shape. "s" (sword), "o" (orc), "e" (demon) are
+// generateMasked() — a hand-authored silhouette (src/tools/spriteGen.ts's SILHOUETTES)
+// constrains WHERE the shape can be; the same noise+smoothing only decides texture
+// within it. "o" and "e" share the exact same humanoid silhouette and differ only by
+// palette (green vs red) — a player-character/enemy pair meant to occupy one map tile
+// each, the same way any other creature would.
+//
+// Found live, not planned from the start: a name/seed alone can't target a specific
+// recognizable object — the owner asked for "an axe," got an unrelated blob, and this
+// mask-gated addition is the fix, researched exhaustively before building
+// (06-active-language-phases.md's Phase 32 entry has the full research + design, plus
+// the outline pass and reduced noise added after comparing against Dwarf Fortress's own
+// item/creature graphics).
+//
+// All four draw as plain characters by default. With a tileset active (QBSK Studio:
+// Engine settings -> examples/res/pixelart_tileset.qbdata) they're painted with their
+// real generated SVGs. Same rule Phase 24 set: the character grid stays the truth, so
+// this scene's golden is byte-exact whether or not a tileset is active.
+//   qbsk run --ansi examples/pixelart_test.qbsk
+//   qbsk check examples/pixelart_test.qbsk
+//   node bench/sprite-gen.mjs 27 16          # regenerate the creature
+//   node bench/sprite-gen.mjs 27 16 sword    # regenerate the sword
+//   node bench/sprite-gen.mjs 27 16 orc      # regenerate the orc
+//   node bench/sprite-gen.mjs 27 16 demon    # regenerate the demon
+scene PixelartTest(width: 60, height: 8)
+
+layer floor z: 0
+    fill "."
+
+layer sprites z: 1
+    put "c" at (10, 4)
+    put "s" at (24, 4)
+    put "o" at (38, 4)
+    put "e" at (52, 4)
+
+layer hud z: 2
+    color fg: bright-yellow
+    put "Phase 32: c=blob s=sword o=orc e=demon-enemy" at (0, 0)

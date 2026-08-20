@@ -1,0 +1,93 @@
+// Subcell resolution (docs/engine.md §11.14).
+//
+// The same circle and the same sine, drawn twice: once at one glyph per cell, once at
+// one subpixel per HALF cell. A character cell is about one wide and two tall, so
+// halving it vertically makes each subpixel square — which is why the right-hand
+// figures use the same radius on both axes and still come out round.
+
+const W = 30
+const H = 10
+const STEPS = 400
+
+// --- one glyph per cell -----------------------------------------------------------
+// A round circle here needs the x radius doubled by hand, because the cell is not
+// square. That compensation is the staircase's cause as much as the resolution is.
+
+func circle_cells(c, cx, cy, r)
+    var i = 0
+    while i < STEPS
+        var a = float(i) * (pi() * 2.0 / float(STEPS))
+        var x = int(round(float(cx) + cos(a) * float(r) * 2.0))
+        var y = int(round(float(cy) + sin(a) * float(r)))
+        put(c, "#", (x, y))
+        i += 1
+
+func sine_cells(c, y0, amp)
+    var x = 0
+    while x < W
+        var a = float(x) * (pi() * 2.0 / float(W))
+        var y = int(round(float(y0) + sin(a) * float(amp)))
+        put(c, "#", (x, y))
+        x += 1
+
+// --- one subpixel per half cell ---------------------------------------------------
+// The y coordinate runs over 2H, and the radius is the same on both axes: the grid
+// is square here, so no compensation is needed and none is applied.
+
+func circle_subcell(c, cx, cy2, r)
+    var i = 0
+    while i < STEPS
+        var a = float(i) * (pi() * 2.0 / float(STEPS))
+        var x = int(round(float(cx) + cos(a) * float(r)))
+        var y = int(round(float(cy2) + sin(a) * float(r)))
+        plot(c, (x, y), "bright-cyan")
+        i += 1
+
+func sine_subcell(c, y0_2, amp2)
+    var x = 0
+    while x < W
+        var a = float(x) * (pi() * 2.0 / float(W))
+        var y = int(round(float(y0_2) + sin(a) * float(amp2)))
+        plot(c, (x, y), "bright-green")
+        x += 1
+
+var stairs = canvas(W, H)
+circle_cells(stairs, 14, 4, 4)
+
+var smooth = canvas(W, H)
+circle_subcell(smooth, 14, 9, 8)
+
+var wave_cells = canvas(W, 5)
+sine_cells(wave_cells, 2, 2)
+
+var wave_subcell = canvas(W, 5)
+sine_subcell(wave_subcell, 5, 4)
+
+// --- one dot per quarter cell, no colour ------------------------------------------
+// Braille reaches 2 x 4 dots per cell — twice the width and four times the height of
+// the grid above — by giving up per-dot colour: the eight dots of a cell share one
+// foreground. Density over hue, for a trail or a curve.
+
+func sine_braille(c, y0_4, amp4)
+    var x = 0
+    while x < W * 2
+        var a = float(x) * (pi() * 2.0 / float(W * 2))
+        var y = int(round(float(y0_4) + sin(a) * float(amp4)))
+        braille(c, (x, y))
+        x += 1
+
+var wave_braille = canvas(W, 5)
+sine_braille(wave_braille, 10, 9)
+
+scene Subcell(width: 64, height: 21, title: "one cell, then two halves")
+
+layer figures z: 0
+    color fg: white
+    put stairs at (1, 0)
+    put smooth at (33, 0)
+    put wave_cells at (1, 10)
+    put wave_subcell at (33, 10)
+
+layer dots z: 0
+    color fg: bright-magenta
+    put wave_braille at (17, 15)

@@ -1,0 +1,73 @@
+// sparks.qbsk — a fire, made of nothing but time.
+//
+// There is no particle list here, no array of live sparks, nothing that gets updated
+// between frames. Every ember is a FUNCTION of the clock: `particle(i, gameTime(),
+// embers)` says where ember i is at this instant, and that is the whole simulation.
+//
+// The consequence is worth stating plainly: skip the clock to two minutes in and the
+// fire is already burning correctly. Run it at 5 fps or at 200 and it is the same
+// fire. Reload the scene and it does not restart. A stateful emitter gives you none
+// of that, and none of it can be pinned by a golden.
+//
+// The layer draws in a LOOP (docs/engine.md §11.11) — forty embers from six lines,
+// with the count in a variable — and each one picks its character from the density
+// ramp by age, so a spark fades out as it climbs instead of blinking off.
+//   qbsk run --ansi --loop examples/sparks.qbsk --fps 24
+scene Sparks(width: 78, height: 24)
+
+const EMBERS = 40
+const SMOKE = 14
+
+// The emitter is an ordinary dict — no new syntax. `angle: 90` is up; `fall` is named
+// for what it does, so smoke floats with a negative one.
+const embers = {
+    "x": 39.0, "y": 19.0,
+    "count": EMBERS, "life": 2.4,
+    "speed": 6.5, "angle": 90.0, "spread": 24.0,
+    "fall": 2.2, "drift": 1.6, "seed": 11,
+}
+
+const smoke = {
+    "x": 39.0, "y": 16.0,
+    "count": SMOKE, "life": 4.0,
+    "speed": 2.2, "angle": 90.0, "spread": 40.0,
+    "fall": 0 - 0.6, "drift": 2.4, "seed": 4,
+}
+
+layer room z: 0
+    color bg: black fg: bright-black
+    fill " "
+    border (0, 0) to (77, 23) style: double
+    put " a fire, made of nothing but time " at (22, 0)
+    put "every ember is a function of the clock - nothing is stored between frames" at (2, 22)
+
+// Smoke first, so embers draw over it.
+layer smoke z: 1
+    color fg: bright-black
+    var s = 0
+    while s < SMOKE
+        var q = particle(s, gameTime(), smoke)
+        // Smoke thins as it rises: the ramp runs the other way, dense to sparse.
+        put glyph(1.0 - q[2], ".:-. ") at (q[0], q[1])
+        s += 1
+
+layer embers z: 2
+    color fg: bright-yellow
+    var i = 0
+    while i < EMBERS
+        var p = particle(i, gameTime(), embers)
+        // Age drives the glyph, so a spark cools as it climbs rather than vanishing.
+        // The ramp is read backwards: young is dense, old is a space.
+        put glyph(1.0 - p[2], " .:*oO") at (p[0], p[1])
+        i += 1
+
+layer logs z: 3
+    color fg: red
+    put "/////" at (36, 20)
+    put "#####" at (36, 21)
+
+// The glow is a shade, not a particle: it re-colours cells that are already there
+// (docs/engine.md §11.6), which is exactly what firelight does to a room.
+layer light z: 9
+    shade radial x: 39 y: 20 radius: 26 tint: bright-yellow strength: 0.55
+    shade pulse speed: 2.6 tint: red strength: 0.22

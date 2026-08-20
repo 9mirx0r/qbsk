@@ -1,0 +1,25 @@
+// tour_move.qbsk — the animated example from docs/tour.md §6.
+//
+//   qbsk run examples/tour_move.qbsk --ansi --loop
+//
+// The scene is RE-COMPOSED every frame from the current variables. You do not erase and
+// redraw; you change the value and the next frame follows.
+
+var x = 0
+
+scene Move(width: 20, height: 3, title: "tour: move", fps: 30)
+
+layer bg z: 0
+    fill "."
+
+layer dot z: 1
+    color fg: bright-cyan
+    put "@" at (x, 1)
+
+on tick(dt)
+    x = x + 1
+    if x > 19
+        x = 0
+
+on key "space"
+    x = 0

@@ -1,0 +1,4 @@
+// Probe for §15.5: a module must not see the entry program's globals.
+// `entry_secret` is defined by the entry program, never here.
+export func peek()
+    return entry_secret

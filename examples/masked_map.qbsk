@@ -1,0 +1,36 @@
+// The masked map (docs/engine.md §11.12): a constant map drawn through a changing
+// mask. The map below never moves; `seen` decides what reaches the screen, and a
+// space in it hides that cell rather than painting over the layer underneath.
+
+const MAP = [
+    "##########",
+    "#........#",
+    "#..####..#",
+    "#..#..#..#",
+    "#..#..#..#",
+    "#..####..#",
+    "#........#",
+    "##########",
+]
+
+// A torch that only lights the middle of the room. Anything a space hides here is
+// left untouched, so the fog layer below shows through it.
+const SEEN = [
+    "          ",
+    "  ......  ",
+    "  ......  ",
+    "  ......  ",
+    "  ......  ",
+    "  ......  ",
+    "  ......  ",
+    "          ",
+]
+
+scene MaskedMap(width: 10, height: 8, title: "the masked map")
+
+layer fog z: 0
+    fill "~"
+
+layer floor z: 1
+    color fg: bright-black
+    put MAP at (0, 0) mask: SEEN

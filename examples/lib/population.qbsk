@@ -1,0 +1,64 @@
+// population.qbsk — weighted population tables.
+//
+// Phase 31 (the roadmap), the "Population Tables" item
+// from the CDDA/Qud audit's D4 (the roadmap §4.5, §5.2 —
+// "Tables + noise -> spawn() from tables"). Closes a real gap found while reopening
+// D1-D5, not a hypothetical one: Phase 27's own generator
+// (bench/worldgen-gen.mjs) assigned NPC professions by round-robin
+// (`PROFESSIONS[i % PROFESSIONS.length]`) because there was no weighted-table
+// mechanism — a settlement's professions were forced into an even split no real
+// population has (most people are common folk; guards, merchants, hermits are
+// progressively rarer).
+//
+// Same split as every other host/QBSK boundary this project draws (Phase 27's
+// personality rolls, Phase 28's name selection, Phase 29's rule engine): the RNG draw
+// stays host-side (QBSK has no bitwise operators, so no seeded PRNG can be written as a
+// QBSK-language library — named in Phase 27, still true here) — but the WEIGHTED-TABLE
+// ALGORITHM itself does not need randomness to express, only a pre-rolled number to
+// consume, so it is real, testable, composable QBSK code, not another host script.
+//
+// Contract: a table is a dict {"entries": [{"value": ..., "weight": int}, ...]}` —
+// weights are relative, not required to sum to any particular total. `roll` is a float
+// in [0, 1) (whatever the host's seeded RNG produced for this pick, stored plainly in a
+// `.qbdata` field, exactly like Phase 28's `nameRng` draws).
+
+// Four ways this could be asked a question with no answer, and until `fail` existed
+// (docs/language.md §15.11) it answered all four with the LAST ENTRY — which reads as a
+// deliberate pick rather than as a table that expresses nothing. Checked here, up front,
+// because every one of them is a property of the table rather than of the draw.
+export func weightedPick(table, roll)
+    var entries = table["entries"]
+    if len(entries) == 0
+        fail("weightedPick: the table has no entries to pick from")
+    if roll < 0.0 or roll > 1.0
+        fail("weightedPick: roll must be in [0, 1], got " + str(roll))
+    var total = 0
+    var i = 0
+    while i < len(entries)
+        var w = entries[i]["weight"]
+        if w < 0
+            // A negative weight makes the cumulative sum run BACKWARDS past this entry,
+            // so everything after it becomes unreachable — silently, and only for some
+            // rolls, which is the worst way for a table to be wrong.
+            fail("weightedPick: entry " + str(i) + " has a negative weight (" + str(w) + ")")
+        total += w
+        i += 1
+    if total == 0
+        fail("weightedPick: every entry has no weight, so the table expresses no distribution")
+    var target = roll * total
+    var cumulative = 0
+    var j = 0
+    while j < len(entries)
+        cumulative += entries[j]["weight"]
+        if target < cumulative
+            return entries[j]["value"]
+        j += 1
+    // Floating-point edge case only (roll approaching 1.0 exactly): fall back to the
+    // last entry rather than error — every other rule in this language treats an
+    // in-range input as always producing a result, and roll is documented as [0, 1).
+    //
+    // That reasoning was always right and used to be reached by inputs it was not about:
+    // an out-of-range roll, a zero-weight table and an empty one all landed here too, and
+    // took the same answer. They are refused above now, so this line is once again only
+    // what it says it is.
+    return entries[len(entries) - 1]["value"]

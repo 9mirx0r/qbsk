@@ -1,0 +1,22 @@
+# walk.qba — a four-frame walk cycle (docs/engine.md §11.4).
+# Frames alternate the legs and bob the arms, so the figure reads as walking
+# rather than sliding. Separator is --- on its own line.
+META name: walker, width: 3, height: 3
+ o
+/|\
+/ \
+---
+META name: walker.2
+ o
+<|>
+ |
+---
+META name: walker.3
+ o
+/|\
+ \
+---
+META name: walker.4
+ o
+<|>
+ |

@@ -1,0 +1,128 @@
+// console.qbsk — the engine console, drawn by the engine.
+//
+// This is the surface QBSK Studio types into (docs/studio.md §14), and it is a QBSK
+// scene like any other. That is deliberate: the engine's most-used screen being written
+// in the engine is the strongest test there is of whether the language is pleasant to
+// build with. Everything awkward here is something a real user would have hit.
+//
+// It reads its whole world through `host()` (§14.6) — scrollback, the input line, the
+// cursor column. One direction: the host puts the data there before the frame, the scene
+// draws it, and the scene has no way to reach back out. A console that could call out of
+// the sandbox would be a very different security proposition.
+//
+// The CRT look is GENERATED, not imitated in CSS: `shade scanline` and a radial phosphor
+// glow over cells the layers already drew.
+//   qbsk run --ansi --loop examples/console.qbsk --fps 20
+scene Console(width: 78, height: 26)
+
+const ROWS = 19
+const TOP = 3
+const PROMPT_Y = 23
+const RULE = "────────────────────────────────────────────────────────────────────────────"
+
+// Defaults so the scene runs standalone, before any host has said anything — the same
+// reason a scene composes once before the first tick.
+var lines = host("lines")
+if lines == null
+    lines = ["QBSK engine console. Type `help`.", "Nothing is running yet — press Run."]
+
+var input = host("input")
+if input == null
+    input = ""
+
+var cursor = host("cursor")
+if cursor == null
+    cursor = 0
+
+var ready = host("ready")
+var sound = host("sound")
+
+on tick(dt)
+    lines = host("lines")
+    if lines == null
+        lines = []
+    input = host("input")
+    if input == null
+        input = ""
+    cursor = host("cursor")
+    if cursor == null
+        cursor = 0
+    ready = host("ready")
+    sound = host("sound")
+
+layer frame z: 0
+    color bg: black fg: green
+    fill " "
+    border (0, 0) to (77, 25) style: double
+    put " QBSK ENGINE CONSOLE " at (28, 0)
+    // `line` draws a fixed character, so a rule in the console's own charset is a
+    // literal. 76 columns wide, matching the frame.
+    put RULE at (1, 22)
+
+// The scrollback draws in a LOOP (docs/engine.md §11.11) — the console cannot know how
+// many lines it has, so a fixed list of `put` statements could never have worked. This
+// is the feature Phase D added, earning its keep on the first real screen that needed it.
+layer scroll z: 1
+    color fg: bright-green
+    var n = len(lines)
+    var first = n - ROWS
+    if first < 0
+        first = 0
+    var i = 0
+    while i < ROWS
+        if first + i < n
+            put lines[first + i] at (2, TOP + i)
+        i += 1
+
+layer prompt z: 2
+    color fg: bright-white
+    put "> " at (2, PROMPT_Y)
+    put input at (4, PROMPT_Y)
+
+// The cursor blinks off the game clock, so it is a pure function of time like every
+// other animation here — no state, and identical at any frame rate.
+layer caret z: 3
+    color fg: bright-yellow
+    visible: int(gameTime() * 2) % 2 == 0
+    put "_" at (4 + cursor, PROMPT_Y)
+
+layer status z: 4
+    color fg: bright-black
+    visible: ready != true
+    put " no live program — press Run " at (24, 25)
+
+// Phosphor: the glow sits over the prompt, brightest where you are typing, and the
+// scanlines are the engine's own (docs/engine.md §11.6) rather than a CSS overlay.
+layer crt z: 9
+    shade radial x: 39 y: 23 radius: 30 tint: green strength: 0.30
+    shade scanline strength: 0.22
+
+// --- The console's voice ---
+//
+// Synthesised, never sampled. The sounds of this era WERE square and sawtooth blips,
+// so building them from our own oscillators is not an imitation of the technique - it
+// is the technique. It also means each one is deterministic and can be pinned by a
+// golden, which an imported .wav never could.
+//
+// Each tone is gated on a name the host sets for exactly ONE frame. A tone absent from
+// a frame is forgotten by the device, so the gap is what lets the next one fire
+// (docs/audio.md §5) - the same mechanism the dialogue beeps in awakening.qbsk use.
+//
+// There is deliberately no per-keystroke click: on Windows the device spawns a player
+// process per sound, so a click per character would be five processes a second. That
+// needs a persistent player first, and it is not worth a stutter.
+layer voice z: 8
+    visible: sound == "open"
+    tone 220 wave: square duration: 0.06 volume: 0.30
+
+    visible: sound == "close"
+    tone 165 wave: square duration: 0.05 volume: 0.26
+
+    visible: sound == "submit"
+    tone 660 wave: square duration: 0.04 volume: 0.22
+
+    // Sawtooth and low: harsh on purpose. An error that sounds like a confirmation
+    // teaches nothing, and this is the one sound that has to be recognised without
+    // looking at the screen.
+    visible: sound == "error"
+    tone 110 wave: sawtooth duration: 0.14 volume: 0.30

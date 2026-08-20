@@ -1,0 +1,38 @@
+// numbers.qbsk — int and float, and where the difference bites (§5.0).
+//
+//   qbsk run examples/numbers.qbsk
+
+print("-- arithmetic preserves int, except division --")
+print("2 + 3      = " + str(2 + 3) + "   (" + type(2 + 3) + ")")
+print("5 % 2      = " + str(5 % 2) + "   (" + type(5 % 2) + ")")
+print("2 + 3.0    = " + str(2 + 3.0) + " (" + type(2 + 3.0) + ")  one float wins")
+print("4 / 2      = " + str(4 / 2) + " (" + type(4 / 2) + ")  ALWAYS float")
+print("int(7 / 2) = " + str(int(7 / 2)) + "   an int result is explicit")
+
+print("")
+print("-- int() truncates toward zero; round() rounds --")
+print("int(3.9)   = " + str(int(3.9)))
+print("int(-3.9)  = " + str(int(-3.9)) + "   (not -4)")
+print("round(3.9) = " + str(round(3.9)))
+
+print("")
+print("-- a grid address is an int, and the language insists --")
+var col = int(12.7)
+print("int(12.7) = " + str(col) + " -> usable as a coordinate")
+print("a float there is a runtime error, never a silent truncation")
+
+print("")
+print("-- float equality is IEEE-754 equality --")
+print("0.1 + 0.2      = " + str(0.1 + 0.2))
+print("== 0.3 ?       = " + str(0.1 + 0.2 == 0.3))
+print("2 == 2.0 ?     = " + str(2 == 2.0) + "   (compared by value)")
+
+// The coordinate below is an int because `col` was converted explicitly.
+scene Numbers(width: 24, height: 3, title: "int and float")
+
+layer bg z: 0
+    fill "."
+
+layer marker z: 5
+    color fg: bright-cyan
+    put "#" at (col, 1)

@@ -1,0 +1,98 @@
+// cube.qbsk — eight points, projected.
+//
+// Three pieces of "ASCII 3D", composed, and still no rasterizer and no matrix
+// library. A camera orbits the origin; `project()` turns each of the eight corners
+// into a cell and a distance; `lit()` turns that distance into an intensity;
+// `glyph()` turns the intensity into a character. Near corners come out heavy and
+// far ones faint, so the shape reads as solid rather than flat.
+//
+// `depth:` on each `put` settles collisions: when two corners land on the same
+// cell, the nearer one wins instead of whichever was declared last.
+//
+// The projections are computed ONCE per frame in `on tick` and stored, rather than
+// re-projected inside each layer. Same result, a fraction of the work, and the scene
+// block stays readable — the layers just draw what the tick worked out.
+//   qbsk run --ansi --loop examples/cube.qbsk --fps 20
+scene Cube(width: 70, height: 26)
+
+// The eight corners, in world space. Nothing here is screen-aware.
+const corners = [
+    [-4.0, -4.0, -4.0], [4.0, -4.0, -4.0], [4.0, 4.0, -4.0], [-4.0, 4.0, -4.0],
+    [-4.0, -4.0, 4.0], [4.0, -4.0, 4.0], [4.0, 4.0, 4.0], [-4.0, 4.0, 4.0],
+]
+
+// Rebuilt each frame rather than written in place: QBSK indexing is read-only
+// (`px[i] = v` is an error), so a frame's projections are ACCUMULATED into fresh
+// lists with `push` and then swapped in. Immutable by construction, which also
+// means a half-updated frame can never be drawn.
+//
+// They start with eight off-grid entries because the scene block composes ONCE at
+// startup, before any tick has run (docs/language.md §7.7). Empty lists would make
+// that first composition read `px[0]` out of range.
+var px = [0 - 5, 0 - 5, 0 - 5, 0 - 5, 0 - 5, 0 - 5, 0 - 5, 0 - 5]
+var py = [0 - 5, 0 - 5, 0 - 5, 0 - 5, 0 - 5, 0 - 5, 0 - 5, 0 - 5]
+var pg = [" ", " ", " ", " ", " ", " ", " ", " "]
+var pd = [99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0]
+
+on tick(dt)
+    // The camera orbits on the game clock, so the orbit is identical at any frame
+    // rate — the same discipline as tweens and frame-swapping.
+    var angle = gameTime() * 0.6
+    var cam = {
+        "x": 20.0 * sin(angle),
+        "y": 6.0,
+        "z": 20.0 * cos(angle),
+        "fov": 70.0,
+    }
+
+    var nx = []
+    var ny = []
+    var ng = []
+    var nd = []
+    var i = 0
+    while i < len(corners)
+        var p = project(corners[i], cam, 70, 26)
+        if p[3]
+            nx = push(nx, p[0])
+            ny = push(ny, p[1])
+            // The three pieces compose: project() gives a distance, lit() turns it
+            // into an intensity, glyph() turns that into a character. 14..30 spans
+            // the orbit, so the ramp is used across its whole range.
+            ng = push(ng, glyph(lit(p[2], 14.0, 30.0)))
+            nd = push(nd, p[2])
+        else
+            // Behind the camera: park it off-grid, where `put` clips it silently.
+            nx = push(nx, 0 - 5)
+            ny = push(ny, 0 - 5)
+            ng = push(ng, " ")
+            nd = push(nd, 99.0)
+        i += 1
+    px = nx
+    py = ny
+    pg = ng
+    pd = nd
+
+layer room z: 0
+    color bg: black fg: bright-black
+    fill " "
+    border (0, 0) to (69, 25) style: double
+    put " eight points, projected " at (22, 0)
+    put "the cube is only 8 world coordinates - the camera does the rest" at (4, 24)
+
+layer cube z: 2
+    color fg: bright-cyan
+    put pg[0] at (px[0], py[0]) depth: pd[0]
+    put pg[1] at (px[1], py[1]) depth: pd[1]
+    put pg[2] at (px[2], py[2]) depth: pd[2]
+    put pg[3] at (px[3], py[3]) depth: pd[3]
+    color fg: bright-white
+    put pg[4] at (px[4], py[4]) depth: pd[4]
+    put pg[5] at (px[5], py[5]) depth: pd[5]
+    put pg[6] at (px[6], py[6]) depth: pd[6]
+    put pg[7] at (px[7], py[7]) depth: pd[7]
+
+// Text anchored to a 3D point — the pattern `project()` exists for. The label rides
+// corner 0 wherever the orbit puts it.
+layer label z: 3
+    color fg: yellow
+    put "<- corner 0" at (px[0] + 2, py[0])

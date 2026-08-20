@@ -1,0 +1,33 @@
+// jail_scene.qbsk — a photograph, converted.
+//
+// The holding level beneath the arena (LORE_BIBLE §5.1): the jailer at the bars with
+// the torch behind him, the fighter sitting in the dark. None of it is hand-drawn.
+// `bench/image-to-grid.mjs` read a render and chose 4,800 glyphs from measured ink
+// coverage (§11.15) — this file just draws what it produced.
+//
+// The conversion needed one thing that is not obvious and cost a spike to find: the
+// source is nearly black, averaging 0.068 luminance, so a raw mapping left 79% of the
+// grid blank. `--normalise --gamma 0.6` moved that to 49.8% and the scene appeared.
+// Grid size changed nothing; the tone curve changed everything.
+//
+//   qbsk run --ansi examples/jail_scene.qbsk
+use "res/jail.qbdata" as art
+
+scene JailScene(width: 120, height: 42)
+
+layer stone z: 0
+    color fg: bright-black
+    fill " "
+
+// A row at a time, because `put <list>` is reserved for a masked map (§11.12) and
+// there is no way to blit a plain block of rows. Worth recording rather than working
+// around silently: converted art is the first thing that wants one, and every scene
+// drawing a backdrop will write this same loop until the engine grows the primitive.
+layer render z: 1
+    color fg: yellow
+    for y in 0..art.CELL["rows"]
+        put art.CELL["lines"][y] at (0, y)
+
+layer caption z: 2
+    color fg: bright-black
+    put "Kúlatho-Surún — 120x40, order preserved 91.68%" at (2, 41)

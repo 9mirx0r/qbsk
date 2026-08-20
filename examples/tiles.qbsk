@@ -1,0 +1,43 @@
+// tiles.qbsk — Phase 24 (C1): a tileset-ready scene (docs/engine.md §15).
+//
+// The scene is drawn with plain characters. A tileset maps those characters to
+// images: in QBSK Studio open Engine settings and pick examples/res/tiles.qbdata,
+// and the wall, floor and player cells are painted as tiles. Without a tileset
+// the window paints characters, exactly like the terminal:
+//   qbsk run --ansi examples/tiles.qbsk
+//   qbsk run --ansi --loop examples/tiles.qbsk --fps 20 --frames 120
+//   qbsk check examples/tiles.qbsk
+//
+// The character grid stays the truth (docs/engine.md §15.1): a tile is a background
+// over the cell, never a replacement for its text — so goldens are byte-exact
+// whether or not a tileset is active.
+scene Room(width: 24, height: 10)
+
+var playerX = 3
+var dir = 1
+
+on tick(dt)
+    playerX = playerX + dir
+    if playerX >= 20
+        dir = -1
+    if playerX <= 3
+        dir = 1
+
+layer floor z: 0
+    fill "."
+
+layer walls z: 1
+    color fg: bright-white
+    var y = 0
+    while y < 10
+        put "#" at (0, y)
+        put "#" at (23, y)
+        y += 1
+    var x = 0
+    while x < 24
+        put "#" at (x, 0)
+        put "#" at (x, 9)
+        x += 1
+
+layer player z: 2
+    put "@" at (playerX, 5)

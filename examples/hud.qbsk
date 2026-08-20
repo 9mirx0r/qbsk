@@ -1,0 +1,24 @@
+// hud.qbsk — M16: world ↔ local coordinates
+//   qbsk run --ansi --loop --fps 20 --frames 120 examples/hud.qbsk
+// The hud layer is offset at (0, 8): its local primitives compose below;
+// texts with world: (x, y) ignore the layer offset and stay at absolute
+// canvas coordinates (title up top, score below).
+scene HUD(width: 30, height: 10)
+
+layer back z: 1
+    fill "."
+    border (0, 0) to (29, 9) style: double
+    color fg: bright-yellow
+    put "TITLE" world: (11, 1)
+    color fg: white
+    put "stars: " world: (2, 3)
+
+layer hud z: 2 at (0, 8)
+    color fg: bright-cyan
+    put "QBSK" at (0, 0)
+    color fg: bright-green
+    put "points: " at (5, 0)
+    // the score derives from the game clock (M14 frame loop)
+    put int(gameTime() * 10) % 60 at (14, 0)
+    color fg: bright-red
+    put "lives: 3" at (22, 0)

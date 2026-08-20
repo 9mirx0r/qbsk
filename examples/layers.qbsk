@@ -1,0 +1,10 @@
+// layers.qbsk — M8: two overlapping layers; the highest z wins in each cell
+scene Demo(width: 30, height: 10)
+
+layer back z: 1
+    fill "."
+    text "ABCDEFGHIJKLMNO" at (1, 5)
+
+layer mid z: 2
+    box (0, 0) to (18, 9) style: single
+    text "xyz" at (3, 5)

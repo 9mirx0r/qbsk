@@ -1,0 +1,42 @@
+// repeat.qbsk — `*` repeats any sequence, in either order (§6.7).
+//
+// The list case was promised by the spec for months and never implemented, which is
+// worse than a missing feature: a reader who trusts the spec writes code that does not
+// run. This file is the proof it runs now.
+
+print("-- strings --")
+print("ab" * 3)
+print(3 * "ab")
+
+print("")
+print("-- lists --")
+print(str([1, 2] * 3))
+print(str(3 * [1, 2]))
+print(str([1, 2] * 0) + "   repeating by zero is empty, not an error")
+
+print("")
+print("-- the copy is its own list --")
+var base = ["-", "-"]
+var wide = base * 3
+wide[0] = "#"
+print("base stayed: " + str(base))
+print("wide  is:    " + str(wide))
+
+print("")
+print("-- a repeated list is how you build a row --")
+var row = ["."] * 20
+print(join(row, ""))
+
+// And the same idea inside a scene: a ruler built by repetition rather than by hand.
+scene Repeat(width: 22, height: 4, title: "repetition")
+
+layer bg z: 0
+    fill " "
+
+layer ruler z: 5
+    color fg: bright-black
+    text join(["-"] * 20, "") at (1, 1)
+
+layer marks z: 10
+    color fg: bright-cyan
+    text join(["|", " ", " ", " "] * 5, "") at (1, 2)

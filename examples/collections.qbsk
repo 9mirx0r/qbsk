@@ -1,0 +1,74 @@
+// collections.qbsk — nested lists and dicts (L1.5) + collection stdlib (L3b)
+// Data-driven data: inventory with lists and dicts.
+
+var inventory = [
+    {"item": "sword", "stats": [12, 3]},
+    {"item": "potion", "stats": [0, 25]},
+    {"item": "shield", "stats": [2, 40]},
+]
+
+var character = {
+    "name": "hero",
+    "level": 3,
+    "inventory": inventory,
+    "position": [10, 5],
+}
+
+print("character: " + character["name"])
+print("level: " + str(character["level"]))
+print("position: " + str(character["position"][0]) + "," + str(character["position"][1]))
+
+print("items: " + str(len(inventory)))
+print("first item: " + inventory[0]["item"])
+print("weapon damage: " + str(inventory[0]["stats"][0]))
+
+var total = 0
+for item in inventory
+    total += item["stats"][1]
+
+print("total stats: " + str(total))
+
+// "grid", not "map" — `map` is the native above (map/filter/reduce) and `var map = ...`
+// silently shadowed it (pre-existing bug, found and fixed here: "redefinition in the
+// same scope = error" — docs/language.md §6 — is a RUNTIME error `qbsk check`'s static
+// analysis wasn't catching, so this file parsed clean but always crashed on `qbsk run`).
+var grid = [[0, 0, 1], [0, 1, 0], [1, 0, 0]]
+print("grid[1][1] (center): " + str(grid[1][1]))
+print("grid[0][2] (corner): " + str(grid[0][2]))
+
+// L3b: list and dict stdlib — with L2 lambdas (docs/language.md §6.3), a one-line
+// helper no longer needs a name and a top-level home. `power` keeps its name because
+// it is used twice below; the single-use predicates inline.
+func power(item)
+    return item["stats"][0] + item["stats"][1]
+
+var powers = map(inventory, power)
+print("powers: " + str(powers))
+print("strong: " + str(filter(powers, func(n) n >= 20)))
+print("total power: " + str(reduce(powers, func(a, b) a + b, 0)))
+
+var sorted = slice(powers, 0)
+sort(sorted)
+print("sorted powers: " + str(sorted))
+reverse(sorted)
+print("reversed powers: " + str(sorted))
+
+print("keys: " + str(keys(character)))
+print("has inventory: " + str(has(character, "inventory")))
+
+push(character["position"], 0)
+print("position + z: " + str(character["position"]))
+
+// Index assignment (Phase 30) — the one thing the natives above never covered:
+// mutating ONE element/key of an existing list/dict without rebuilding the whole
+// value. `character["level"] += 1` overwrites an existing key in place; `character["guild"]
+// = "none"` ADDS a key that was never there; `inventory[0]["stats"][0] = 15` replaces one
+// element of a nested list reached through two levels of indexing.
+character["level"] += 1
+print("leveled up: " + str(character["level"]))
+
+character["guild"] = "none"
+print("guild: " + character["guild"])
+
+inventory[0]["stats"][0] = 15
+print("sword damage after upgrade: " + str(inventory[0]["stats"][0]))

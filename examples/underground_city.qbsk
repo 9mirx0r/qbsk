@@ -1,0 +1,242 @@
+// underground_city.qbsk — a city built into the belly of the world, seen from a
+// ledge partway up the cavern wall: crystal light above, magma far below, and a
+// terraced city strung between them on stone stairs and a single bridge.
+//
+// Mostly hand-placed art, using the documented pattern of a `func` that draws,
+// called from inside a layer body (docs/engine.md §11.11). Three things are
+// genuinely generative rather than hand-typed, because typing the same glyph
+// forty times is not what "elaborate" should mean: the stalactites, the hazy
+// distant skyline, and the scattered torch lights are all `rng()`-seeded loops
+// — dense and irregular, but the SAME irregular every run (a golden could pin
+// this scene).
+//
+//   qbsk run --ansi --loop examples/underground_city.qbsk --fps 20
+scene UndergroundCity(width: 100, height: 40)
+
+func rng(seed)
+    seed = (seed * 1103515245 + 12345) % 2147483648
+    return seed
+
+var t = 0
+
+on tick(dt)
+    t = t + 1
+
+// ============================================================ the void
+layer void z: 0
+    color bg: black fg: black
+    fill " "
+
+// ============================================================ ceiling: stalactites
+func drawStalactites()
+    var s = 71
+    var x = 16
+    color fg: bright-black
+    while x < 97
+        s = rng(s)
+        var stalLen = 2 + (s % 5)
+        var yy = 0
+        while yy < stalLen
+            put "|" at (x, yy)
+            yy += 1
+        put "\\|/" at (x - 1, stalLen)
+        s = rng(s)
+        x += 3 + (s % 5)
+
+layer ceiling z: 1
+    drawStalactites()
+
+// ============================================================ the crystal — the cavern's sun
+func drawCrystal()
+    color fg: bright-cyan
+    put "     /\\" at (76, 2)
+    put "    /  \\" at (76, 3)
+    put "   /    \\" at (76, 4)
+    put "  / /\\  /\\" at (75, 5)
+    put " /_/  \\/  \\_\\" at (74, 6)
+    put "/__________\\" at (74, 7)
+    color fg: white
+    put "*" at (91, 3)
+    put "." at (93, 6)
+    put "." at (70, 4)
+
+layer crystal z: 2
+    drawCrystal()
+
+// ============================================================ the distant skyline — hazy, far below the ceiling
+func drawFarSkyline()
+    var s = 5
+    var x = 3
+    color fg: bright-black
+    while x < 96
+        s = rng(s)
+        var towerH = 2 + (s % 5)
+        var yy = 0
+        while yy < towerH
+            put "▓" at (x, 15 - yy)
+            yy += 1
+        s = rng(s)
+        x += 2 + (s % 4)
+
+layer farskyline z: 3
+    drawFarSkyline()
+
+// ============================================================ the mid-city: terraces, stairs, bridge, towers
+func drawTerraces()
+    color fg: bright-black
+    put "══════════════════════════════════════════════" at (18, 30)
+    put "═══════════════════════════════════════════" at (22, 27)
+    put "══════════════════════════════════" at (26, 24)
+    put "═══════════════════════════" at (30, 21)
+
+func drawStairs()
+    color fg: bright-black
+    var x = 22
+    var y = 20
+    while y < 28
+        put "▄▄" at (x, y)
+        x += 2
+        y += 1
+
+func drawBridge()
+    color fg: bright-black
+    put "‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾" at (36, 19)
+    put "||  ||  ||  ||  ||  ||" at (36, 20)
+
+func drawTowers()
+    // The keep — tallest, central spire, dead ahead across the bridge.
+    color fg: white
+    put "      /\\" at (46, 9)
+    put "     /  \\" at (46, 10)
+    put "    /    \\" at (46, 11)
+    put "   |======|" at (45, 12)
+    put "   |  []  |" at (45, 13)
+    put "   |      |" at (45, 14)
+    put "   |  []  |" at (45, 15)
+    put "   |______|" at (45, 16)
+    color fg: bright-white
+    // Two flanking towers, shorter, on either side of the terraces.
+    put "  /\\" at (28, 15)
+    put " |==|" at (27, 16)
+    put " | []" at (27, 17)
+    put " |__|" at (27, 18)
+    put "     /\\" at (62, 14)
+    put "    |==|" at (61, 15)
+    put "    | []|" at (61, 16)
+    put "    |___|" at (61, 17)
+    // A row of low rooftops filling out the terrace between the towers.
+    color fg: bright-black
+    put "^^  ^^^  ^^  ^^^  ^^" at (32, 19)
+    put "[][] [][][] [][] [][]" at (32, 20)
+
+layer midcity z: 4
+    drawTerraces()
+    drawStairs()
+    drawBridge()
+    drawTowers()
+
+// ============================================================ the magma river, far below
+const RIVER_OFFSETS = [0, 3, 6, 8, 7, 5, 2, 0, -2, -3, -1]
+
+func drawRiver()
+    var row = 0
+    while row < len(RIVER_OFFSETS)
+        var off = RIVER_OFFSETS[row]
+        var baseX = 22 + off
+        var col = 0
+        while col < 16
+            var cx = baseX + col
+            var flick = (cx + row + int(t / 3)) % 5
+            if flick == 0
+                color fg: bright-yellow
+            elif flick == 1
+                color fg: yellow
+            else
+                color fg: red
+            put "~" at (cx, 29 + row)
+            col += 1
+        row += 1
+
+layer river z: 5
+    drawRiver()
+
+const mist = {
+    "x": 30.0, "y": 30.0,
+    "count": 14, "life": 3.0,
+    "speed": 1.2, "angle": 90.0, "spread": 50.0,
+    "fall": 0 - 1.0, "drift": 1.8, "seed": 17,
+}
+
+layer mist z: 6
+    color fg: bright-black
+    var mi = 0
+    while mi < 14
+        var mp = particle(mi, gameTime(), mist)
+        put glyph(1.0 - mp[2], " .:-") at (mp[0], mp[1])
+        mi += 1
+
+// ============================================================ torches scattered through the city
+func drawTorches()
+    var s = 909
+    var i = 0
+    while i < 12
+        s = rng(s)
+        var tx = 24 + (s % 50)
+        s = rng(s)
+        var ty = 11 + (s % 10)
+        var flick = (t + i * 7) % 20
+        if flick < 15
+            color fg: bright-yellow
+        else
+            color fg: yellow
+        put "°" at (tx, ty)
+        i += 1
+
+layer torches z: 7
+    drawTorches()
+
+// ============================================================ dust and spore motes drifting past the ledge
+const dust = {
+    "x": 50.0, "y": 24.0,
+    "count": 20, "life": 6.0,
+    "speed": 1.0, "angle": 90.0, "spread": 160.0,
+    "fall": 0 - 0.15, "drift": 3.0, "seed": 42,
+}
+
+layer dustmotes z: 8
+    color fg: bright-black
+    var di = 0
+    while di < 20
+        var dp = particle(di, gameTime(), dust)
+        put glyph(1.0 - dp[2], " .'") at (dp[0], dp[1])
+        di += 1
+
+// ============================================================ the ledge — where you are standing
+func drawForegroundLedge()
+    color fg: black
+    put "██████" at (0, 36)
+    put "████████" at (0, 37)
+    put "██████████" at (0, 38)
+    put "████████████" at (0, 39)
+    put "██████" at (94, 34)
+    put "████████" at (91, 35)
+    put "██████████" at (89, 36)
+    put "██████████████" at (85, 37)
+    put "████████████████" at (83, 38)
+    put "██████████████████" at (81, 39)
+
+layer foregroundledge z: 9
+    drawForegroundLedge()
+
+// ============================================================ ambient lighting — applied over the WHOLE composed
+// scene, so it has to sit above every layer it should touch (docs/engine.md §15
+// puts the light layer's z above everything else for exactly this reason).
+layer lighting z: 10
+    shade radial x: 80 y: 6 radius: 42 tint: bright-cyan strength: 0.20
+    shade pulse speed: 0.6 tint: bright-white strength: 0.06
+    shade radial x: 28 y: 34 radius: 22 tint: red strength: 0.16
+    shade grade tint: blue strength: 0.14
+
+layer caption z: 11
+    color fg: bright-black
+    put "a city that grew where the light does not reach" at (2, 0)

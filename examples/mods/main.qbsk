@@ -1,0 +1,5 @@
+use "lib.qbsk"
+
+print(lib.greeting)
+print(lib.double(21))
+print("args: " + str(args()))

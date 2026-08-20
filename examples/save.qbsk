@@ -1,0 +1,64 @@
+// save.qbsk — L1: persistence (docs/language.md §13)
+// A tiny wanderer that remembers where you left it. Move with the arrows, press
+// "s" to save, "l" to load, and quit — running it again and pressing "l" restores
+// the walk from disk (<this dir>/saves/wanderer.qbdata).
+//   qbsk run --ansi --loop examples/save.qbsk --fps 20
+//   qbsk check examples/save.qbsk
+scene Save(width: 30, height: 11)
+
+var x = 14
+var y = 5
+var steps = 0
+var status = "arrows move | s save | l load"
+
+// The Continue-menu idiom (§13.4): a missing slot is null, not an error.
+var slots = list_saves()
+if len(slots) > 0
+    status = "found a save — press l to load"
+
+on key "arrow-left"
+    if x > 1
+        x = x - 1
+        steps = steps + 1
+
+on key "arrow-right"
+    if x < 28
+        x = x + 1
+        steps = steps + 1
+
+on key "arrow-up"
+    if y > 1
+        y = y - 1
+        steps = steps + 1
+
+on key "arrow-down"
+    if y < 9
+        y = y + 1
+        steps = steps + 1
+
+on key "s"
+    // The program decides what its state IS (§13.1): an explicit dict, so the
+    // save survives any refactor of the variables around it.
+    save_state("wanderer", {"x": x, "y": y, "steps": steps})
+    status = "saved at ({x}, {y})"
+
+on key "l"
+    var saved = load_state("wanderer")
+    if saved == null
+        status = "no save yet — press s first"
+    else
+        x = saved["x"]
+        y = saved["y"]
+        steps = saved["steps"]
+        status = "loaded ({x}, {y})"
+
+layer arena z: 1
+    fill "."
+    box (0, 0) to (29, 10) style: double
+
+layer wanderer z: 2
+    text "@" at (x, y)
+
+layer hud z: 3
+    text status at (1, 0)
+    text "steps: {steps}" at (1, 10)

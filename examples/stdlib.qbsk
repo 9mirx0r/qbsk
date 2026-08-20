@@ -1,0 +1,19 @@
+var name = "  qbsk  "
+var sentence = "hello, world, qbsk"
+
+print(upper(name))
+print(lower("QBSK"))
+print(trim(name) + "!")
+print(split(sentence, ", "))
+print(join(split(sentence, ", "), " | "))
+print(replace(sentence, "qbsk", "engine"))
+print(contains(sentence, "world"))
+print(starts_with(sentence, "hello"))
+print(ends_with(sentence, "qbsk"))
+print(abs(-42))
+print(min(3, 7))
+print(max(2.5, 2))
+print(round(3.5))
+print(floor(9.9))
+print(ceil(9.1))
+print(sqrt(16))

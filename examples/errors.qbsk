@@ -1,0 +1,20 @@
+// errors.qbsk — error handling with try/catch (L4)
+// Caught errors do not abort the program; e exposes message, line, col and file.
+
+func divide(a, b)
+    try:
+        return a / b
+    catch e:
+        print("could not divide: " + e["message"])
+        return 0
+
+print("10 / 2 = " + str(divide(10, 2)))
+print("10 / 0 = " + str(divide(10, 0)))
+
+try:
+    var n = int("not a number")
+    print("n: " + str(n))
+catch e:
+    print("error on line " + str(e["line"]) + ": " + e["message"])
+
+print("the program continues after the caught error")

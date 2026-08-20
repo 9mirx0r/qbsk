@@ -1,0 +1,72 @@
+// spritesheet.qbsk — Phase 32d: crops a decoded sprite sheet into individual cells.
+//
+// Genuinely QBSK's own: pure index arithmetic, no bitwise operators needed anywhere,
+// unlike the PNG decoding that produces `pixels` in the first place — that part stays
+// host-side (src/tools/pngDecode.ts's own header explains why: DEFLATE is a bit-level
+// format QBSK cannot decode, the same gap Phase 27 named for a seeded RNG). Once a
+// sheet is already a flat, palette-indexed pixel list — exactly
+// examples/lib/pixelart.qbsk's own convention, 0 = empty/transparent, k = palette[k-1]
+// — slicing it into a grid of equal-sized cells needs nothing QBSK doesn't already
+// have.
+//
+// Built for the owner's own AI-generated reference sheets (06-active-language-phases.md's
+// Phase 32 entry): comparing QBSK's procedural output against them needs the sheet cut
+// into individual sprites first.
+
+func idx(x, y, w)
+    return y * w + x
+
+// Extracts one cellWidth x cellHeight cell from a sheetWidth x sheetHeight,
+// palette-indexed `pixels` list — (col, row) in CELL units, not pixels (col=2 means
+// "the third cell across", not "pixel column 2"). Returns a flat, row-major list the
+// same shape `pixels` itself is — directly usable as a `.qbdata` `pixel_sprite`'s own
+// `pixels` field.
+export func cropCell(sheetWidth, sheetHeight, pixels, cellWidth, cellHeight, col, row)
+    // `gridSize` below is called this library's own "caller's guide for which (col, row)
+    // pairs are valid" — and nothing enforced it. Going one column too far did not fail:
+    // the flat index ran off the end of a sheet row and into the start of the next, so
+    // the cell came back as a MIX OF TWO ROWS with no complaint. On a 6x4 sheet of
+    // numbered pixels with 4x2 cells, `col: 1` answered [4, 5, 6, 7, 10, 11, 12, 13],
+    // and four of those live on another row. A sprite one column adrift is not obviously
+    // wrong to look at — it is plausible garbage, which is the worst kind.
+    var grid = gridSize(sheetWidth, sheetHeight, cellWidth, cellHeight)
+    if len(pixels) != sheetWidth * sheetHeight
+        fail("cropCell: a " + str(sheetWidth) + "x" + str(sheetHeight) + " sheet is " + str(sheetWidth * sheetHeight) + " pixels, got " + str(len(pixels)))
+    if col < 0 or col >= grid["cols"]
+        fail("cropCell: column " + str(col) + " is outside the sheet, which holds " + str(grid["cols"]) + " whole columns of " + str(cellWidth))
+    if row < 0 or row >= grid["rows"]
+        fail("cropCell: row " + str(row) + " is outside the sheet, which holds " + str(grid["rows"]) + " whole rows of " + str(cellHeight))
+    var out = []
+    var originX = col * cellWidth
+    var originY = row * cellHeight
+    var y = 0
+    while y < cellHeight
+        var x = 0
+        while x < cellWidth
+            var srcX = originX + x
+            var srcY = originY + y
+            out = push(out, pixels[idx(srcX, srcY, sheetWidth)])
+            x += 1
+        y += 1
+    return out
+
+// How many whole cellWidth x cellHeight cells fit in a sheetWidth x sheetHeight sheet —
+// the caller's guide for which (col, row) pairs are valid to pass to cropCell().
+export func gridSize(sheetWidth, sheetHeight, cellWidth, cellHeight)
+    // A zero cell divides by zero and a negative one answers a negative count that every
+    // caller then loops zero times over — a sheet that silently holds no cells.
+    if cellWidth < 1 or cellHeight < 1
+        fail("gridSize: a cell must be at least 1x1, got " + str(cellWidth) + "x" + str(cellHeight))
+    var cols = floor(sheetWidth / cellWidth)
+    var rows = floor(sheetHeight / cellHeight)
+    return {"cols": cols, "rows": rows}
+
+// True if a cell is entirely empty (every pixel is 0) — lets a caller skip a
+// ragged sheet's unused trailing cells instead of writing out blank sprites.
+export func cellIsEmpty(cell)
+    var i = 0
+    while i < len(cell)
+        if cell[i] != 0
+            return false
+        i += 1
+    return true

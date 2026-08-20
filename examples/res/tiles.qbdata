@@ -1,0 +1,16 @@
+// tiles.qbdata — a tileset for examples/tiles.qbsk (docs/engine.md §15).
+//
+// Maps a cell character to an image. Pick this file in QBSK Studio's Engine
+// settings; every cell whose character matches a glyph here is painted with the
+// tile image. A cell with no tile — and any scene with no tileset chosen — keeps
+// painting its character (docs/engine.md §15.3).
+//
+// `image` is relative to this file; each entry is validated at load: one-character
+// glyph, one owner per glyph, image present on disk.
+shape tile
+    glyph: str
+    image: str
+
+WALL = {"glyph": "#", "image": "tiles/wall.svg"}
+FLOOR = {"glyph": ".", "image": "tiles/floor.svg"}
+PLAYER = {"glyph": "@", "image": "tiles/player.svg"}

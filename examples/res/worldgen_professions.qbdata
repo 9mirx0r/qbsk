@@ -1,0 +1,25 @@
+// worldgen_professions.qbdata — CDDA-style profession bundles, Phase 27
+// (15-cataclysm-dda-worldgen-research.md §5): skills + starting items in one template,
+// ready to attach to a spawned NPC without three separate systems to reconcile by hand.
+
+shape profession
+    glyph: str
+    skill: str
+    skill_level: int
+    starting_item: str
+
+GUARD    = {"glyph": "g", "skill": "melee",  "skill_level": 3, "starting_item": "spear"}
+MERCHANT = {"glyph": "m", "skill": "barter", "skill_level": 4, "starting_item": "ledger"}
+HERMIT   = {"glyph": "h", "skill": "herbalism", "skill_level": 5, "starting_item": "satchel"}
+
+// Phase 31 — a weighted population table (lib/population.qbsk), the D4 item Phase 27's
+// own generator (bench/worldgen-gen.mjs) never had: profession used to be assigned by
+// round-robin (i % 3), forcing an even split no real settlement has. Most people are
+// common folk; guards, merchants and hermits are progressively rarer — a plain
+// demographic a table can express and round-robin cannot. A second `shape` block in the
+// same file governs only what follows it (src/parser/qbdata.ts's own top-to-bottom
+// rule) — GUARD/MERCHANT/HERMIT above are untouched by this.
+shape population_table
+    entries: list
+
+PROFESSION_TABLE = {"entries": [{"value": "guard", "weight": 50}, {"value": "merchant", "weight": 35}, {"value": "hermit", "weight": 15}]}

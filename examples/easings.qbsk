@@ -1,0 +1,51 @@
+// easings.qbsk — the six easing curves, side by side (M17 DoD).
+//
+// Each row plots one curve: the marker sits at animate(...) for that easing at the
+// current game time. Run it in loop mode to watch them race:
+//
+//   qbsk run examples/easings.qbsk --ansi --loop --fps 30
+//
+// The curves are pure functions of time, so a given moment always draws the same
+// frame — that is what makes the tween goldens possible.
+
+const WIDTH = 48
+const TRACK = 40
+const DURATION = 3.0
+
+var t = gameTime() % DURATION
+
+scene Easings(width: WIDTH, height: 16, title: "QBSK easings", fps: 30)
+
+layer bg z: 0
+    fill "."
+
+layer labels z: 5
+    color fg: bright-black
+    text "linear" at (0, 1)
+    text "ease-in" at (0, 3)
+    text "ease-out" at (0, 5)
+    text "ease-in-out" at (0, 7)
+    text "bounce" at (0, 9)
+    text "elastic" at (0, 11)
+
+layer track z: 8
+    color fg: bright-black
+    line (13, 1) to (13 + TRACK, 1)
+    line (13, 3) to (13 + TRACK, 3)
+    line (13, 5) to (13 + TRACK, 5)
+    line (13, 7) to (13 + TRACK, 7)
+    line (13, 9) to (13 + TRACK, 9)
+    line (13, 11) to (13 + TRACK, 11)
+
+layer markers z: 20
+    color fg: bright-cyan
+    put "#" at (13 + int(animate("e_linear", 0.0, TRACK * 1.0, DURATION, "linear")), 1)
+    put "#" at (13 + int(animate("e_in", 0.0, TRACK * 1.0, DURATION, "ease-in")), 3)
+    put "#" at (13 + int(animate("e_out", 0.0, TRACK * 1.0, DURATION, "ease-out")), 5)
+    put "#" at (13 + int(animate("e_inout", 0.0, TRACK * 1.0, DURATION, "ease-in-out")), 7)
+    put "#" at (13 + int(animate("e_bounce", 0.0, TRACK * 1.0, DURATION, "bounce")), 9)
+    put "#" at (13 + int(animate("e_elastic", 0.0, TRACK * 1.0, DURATION, "elastic")), 11)
+
+layer hud z: 30
+    color fg: bright-white
+    text "t = " + str(int(t * 100) / 100.0) + "s of " + str(DURATION) + "s" at (0, 14)

@@ -1,0 +1,99 @@
+// cell_block.qbsk — a converted photograph, with a scene played on top of it.
+//
+// This is F1 and F2 meeting: the set is 4,800 glyphs `bench/image-to-grid.mjs` chose
+// from a render (§11.17), and everything above it — the dialogue box, the speakers, the
+// physician walking in — comes from `lib/cinematic.qbsk` (§11.18), which is QBSK, not
+// natives. The engine grew a converter and a vocabulary; the scene is just composition.
+//
+// Beats: Vosk speaks through the bars, Adrian answers, the physician arrives to price
+// the merchandise, and the cell goes quiet again.
+//
+//   qbsk run --ansi --loop examples/cell_block.qbsk --fps 20
+use "res/jail.qbdata" as art
+use "lib/cinematic.qbsk" as cine
+
+scene CellBlock(width: 120, height: 48, title: "Kúlatho-Surún", fps: 20)
+
+// Who speaks, and in what colour. The Othári is the lore's own: `thoári` is one who
+// watches, `lidhári` is one who cannot cross, `murári-surún` is the arena surgeon
+// (LORE_BIBLE §5.3) — the words existed before the characters needed them.
+const VOSK = {"name": "VOSK", "role": "thoári", "color": "bright-yellow"}
+const ADRIAN = {"name": "ADRIAN", "role": "lidhári 4077", "color": "cyan"}
+const MEDIC = {"name": "SERA", "role": "murári-surún", "color": "bright-green"}
+
+const SCRIPT = [
+    [VOSK, "on your feet. the surgeon wants to see what he paid for."],
+    [ADRIAN, "he paid for a fighter. tell him to come back when i am one again."],
+    [VOSK, "he is already here."],
+    [MEDIC, "sit. the shoulder first — and do not tell me it is nothing, i can see how you hold it."],
+    [ADRIAN, "it is nothing."],
+    [MEDIC, "then you will not mind me writing that down."],
+    [VOSK, "..."],
+]
+
+const BEATS = timeline_sequence([
+    timeline_step("0", 3.4),
+    timeline_step("1", 4.0),
+    timeline_step("2", 2.4),
+    timeline_step("3", 4.6),
+    timeline_step("4", 2.2),
+    timeline_step("5", 3.6),
+    timeline_step("6", 2.4),
+    timeline_wait(1.6),
+])
+
+const BOX_W = 116
+const MEDIC_ENTERS = 9.8
+
+// Seeded with the first beat rather than with blanks: the scene block composes ONCE at
+// startup, before any tick has run (language.md §7.7), so a scene that starts empty
+// draws an empty box on its first frame and pins that as its golden.
+var beat = 0
+var speaker = SCRIPT[0][0]
+var say = SCRIPT[0][1]
+var medicX = 0.0 - 12.0
+var medicHere = false
+
+on tick(dt)
+    var t = gameTime() % timeline_duration(BEATS)
+    beat = cine.beat_at(BEATS, gameTime())
+    if beat >= 0
+        speaker = SCRIPT[beat][0]
+        say = SCRIPT[beat][1]
+    else
+        say = ""
+    // The physician walks in from the corridor rather than appearing. `entrance_x`
+    // eases, so she arrives instead of teleporting.
+    medicX = cine.entrance_x(0.0 - 12.0, 74.0, MEDIC_ENTERS, 2.2, t)
+    medicHere = cine.on_stage(MEDIC_ENTERS, 0.0 - 1.0, t)
+
+layer set z: 0
+    color fg: yellow
+    for y in 0..art.CELL["rows"]
+        put art.CELL["lines"][y] at (0, y)
+
+// The two who are already in the room. Drawn over the converted set, which is why the
+// set is a backdrop and not the whole picture.
+layer figures z: 1
+    color fg: bright-yellow
+    put "▄█▄" at (30, 27)
+    put "███" at (30, 28)
+    color fg: cyan
+    put "▄▀▄" at (86, 30)
+    put "███" at (86, 31)
+
+layer arrival z: 2
+    color fg: bright-green
+    visible: medicHere
+    put "▄▀▄" at (int(medicX), 26)
+    put "▐█▌" at (int(medicX), 27)
+
+layer speech z: 3
+    color fg: bright-black
+    visible: say != ""
+    border (1, 41) to (118, 46) style: single
+    color fg: speaker["color"]
+    put speaker["name"] + "  ·  " + speaker["role"] at (3, 41)
+    color fg: white
+    for i in 0..len(cine.box_lines(say, BOX_W))
+        put cine.box_lines(say, BOX_W)[i] at (3, 43 + i)

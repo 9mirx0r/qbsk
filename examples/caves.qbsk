@@ -1,0 +1,84 @@
+// caves.qbsk — L4: seeded randomness + bitwise (docs/language.md §6.4, §6.5)
+// A cave generated IN QBSK, deterministically: same seed, same cave, every run —
+// the thing Phase 27's worldgen had to do with host-side generator scripts because
+// the language had no bitwise and no seeded RNG. Now it is a page of QBSK.
+//
+// Cellular-automata cave (the roguelike classic): seed random walls, then two
+// smoothing passes where each cell becomes what its neighbourhood mostly is.
+// Tile flags pack into ONE int per cell with bitwise or/and — the other L4 tool.
+//   qbsk run --ansi examples/caves.qbsk
+//   qbsk check examples/caves.qbsk
+scene Caves(width: 48, height: 18)
+
+const W = 46
+const H = 15
+const WALL = 1        // bit 0: solid
+const WATER = 2       // bit 1: wet floor
+
+const SEED = 20260814
+
+var roll = rng(SEED)
+var grid = []
+
+// Seed pass: borders solid, interior walls at 45%.
+for y in 0..H
+    var row = []
+    for x in 0..W
+        if x == 0 or y == 0 or x == W - 1 or y == H - 1
+            row = push(row, WALL)
+        elif roll_int(roll, 0, 100) < 45
+            row = push(row, WALL)
+        else
+            row = push(row, 0)
+    grid = push(grid, row)
+
+func wallsAround(g, cx, cy)
+    var count = 0
+    for dy in 0..3
+        for dx in 0..3
+            var nx = cx + dx - 1
+            var ny = cy + dy - 1
+            if nx < 0 or ny < 0 or nx >= W or ny >= H
+                count += 1
+            elif (g[ny][nx] & WALL) == WALL
+                count += 1
+    return count
+
+// Two smoothing passes: a cell with 5+ solid neighbours (self included) becomes
+// solid. Each pass reads the PREVIOUS grid and builds a new one — half-smoothed
+// input would bias the sweep direction.
+for pass in 0..2
+    var next = []
+    for y in 0..H
+        var row = []
+        for x in 0..W
+            if wallsAround(grid, x, y) >= 5
+                row = push(row, WALL)
+            else
+                row = push(row, 0)
+        next = push(next, row)
+    grid = next
+
+// Water pools: floor cells picked by the SAME stream, so the whole cave is one
+// seed's story. `|` adds the flag without touching bit 0.
+for i in 0..40
+    var wx = roll_int(roll, 1, W - 1)
+    var wy = roll_int(roll, 1, H - 1)
+    if (grid[wy][wx] & WALL) == 0
+        grid[wy][wx] = grid[wy][wx] | WATER
+
+layer cave z: 1
+    color bg: black fg: bright-black
+    fill " "
+    for y, row in grid
+        for x in 0..W
+            if (row[x] & WALL) == WALL
+                put "#" at (x + 1, y + 1)
+            elif (row[x] & WATER) == WATER
+                put "~" at (x + 1, y + 1)
+            else
+                put "." at (x + 1, y + 1)
+
+layer hud z: 2
+    color fg: bright-yellow
+    put "seed {SEED} - same seed, same cave" at (1, 17)

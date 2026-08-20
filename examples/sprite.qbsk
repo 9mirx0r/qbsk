@@ -1,0 +1,10 @@
+// sprite.qbsk — M9: sprites from a .qba file with anchors and scale
+scene SpriteDemo(width: 24, height: 8)
+
+layer bg z: 1
+    fill "."
+
+layer hero z: 2
+    sprite "res/hero.qba" at (4, 1)
+    sprite "res/hero.qba" at (12, 1) anchor: center
+    sprite "res/hero.qba" at (14, 1) scale: (2, 1)

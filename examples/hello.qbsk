@@ -1,0 +1,14 @@
+// hello.qbsk — first QBSK example (M2: tokenizes; M4: executes)
+scene Game(width: 80, height: 24, title: "Hello QBSK", fps: 30)
+
+layer frame z: 100
+    border (0, 0) to (79, 23) style: double
+    text "QBSK" at (36, 10)
+
+layer hero z: 50
+    canvas hero_sprite at (10, 5):
+        """
+         O
+        /|\
+        / \
+        """

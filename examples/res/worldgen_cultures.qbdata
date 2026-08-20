@@ -1,0 +1,41 @@
+// worldgen_cultures.qbdata — Phase 28: three original civilizations, each with its own
+// name, demonym, language and religion — INSPIRED BY THE SPIRIT of three real-world
+// traditions (steppe horse-clans, a disciplined law-and-legion empire, a devout
+// seafaring court) WITHOUT naming, copying, or translating any of them. Every name,
+// word and belief below is invented for this project (16-qbsk-worldgen-design.md §4a:
+// inspired by a mechanism/spirit, never a port of real content).
+//
+// Each culture still translates the SAME shared root-concept pool
+// (worldgen_concepts.qbdata) into its own sound (14-dwarf-fortress-worldgen-research.md
+// §2) — that mechanism is unchanged; what's new is the surrounding identity.
+//
+// Recorded-debt fix (Phase 28 closure): the pool grew from 12 to 26 concepts and every
+// entry below now carries a phoneme for all 14 new ones, taking each culture from 6 to
+// 13-15 name candidates (see worldgen_concepts.qbdata's own header for the count).
+//
+// Every entry is ONE LINE — .qbdata's loader reads an entry's value from the rest of
+// its own line only (src/parser/qbdata.ts), the same constraint bestiary.qbdata follows.
+
+shape culture
+    civilization: str
+    demonym: str
+    language: str
+    religion_name: str
+    religion_desc: str
+    allowed: list
+    phonemes: dict
+
+// VAELTHORUM — the people of Ashford's watch. A law-bound, order-and-discipline
+// civilization: fortified settlements, a chain of command, and a pantheon of civic
+// "Aspects" rather than a single god. Hard consonants and -or/-us-flavored endings.
+ASHFORD_CULTURE = {"civilization": "Vaelthorum", "demonym": "Vaelthori", "language": "Vaelthic", "religion_name": "the Concord of Aspects", "religion_desc": "a pantheon of civic virtues given form — the Aspect of Law, the Aspect of the Watch, the Aspect of the Foundation-Stone — invoked before any oath or building is laid", "allowed": ["martial", "enduring"], "phonemes": {"STONE": "dor", "IRON": "thek", "FLINT": "drak", "WOLF": "kar", "STORM": "vex", "EAGLE": "kir", "ANVIL": "dur", "SPEAR": "gorn", "BANNER": "vash", "FROST": "krel", "ASH": "sar", "OAK": "mus", "CEDAR": "dun", "HEARTH": "fen", "VOW": "athor", "RAVEN": "rul", "MOON": "val", "TIDE": "vor", "THORN": "kon", "HAWK": "rek", "BROOK": "iov", "VALE": "tus", "WILLOW": "sil", "GRAIN": "vask", "LANTERN": "bral", "EMBER": "mar"}}
+
+// CORAVEL — the people of Millbrook's trade. A seafaring, devoutly single-faithed
+// civilization of merchant-explorers and formal courtesy. Soft consonants and
+// vowel-heavy, -ia/-ez-flavored endings.
+MILLBROOK_CULTURE = {"civilization": "Coravel", "demonym": "Coraveli", "language": "Coravin", "religion_name": "the Sealed Faith", "religion_desc": "devotion to Yllumar, the Guiding Light, believed to walk one step ahead of any ship or caravan that has not yet found its harbor", "allowed": ["trade", "domestic"], "phonemes": {"STONE": "vel", "IRON": "dor", "FLINT": "dorez", "WOLF": "lie", "STORM": "ven", "EAGLE": "kellia", "ANVIL": "dena", "SPEAR": "zeya", "BANNER": "orin", "FROST": "wia", "ASH": "bel", "OAK": "ona", "CEDAR": "sira", "HEARTH": "bellu", "VOW": "sera", "RAVEN": "mira", "MOON": "sol", "TIDE": "voa", "THORN": "san", "HAWK": "nira", "BROOK": "lun", "VALE": "ez", "WILLOW": "fenia", "GRAIN": "bruna", "LANTERN": "vozia", "EMBER": "ia"}}
+
+// OSTRIVAK — the people of Cairn Hollow's wilds. A clan-based, horse-and-steppe
+// civilization bound by oral history rather than written law, venerating ancestor and
+// nature spirits carried on the wind. Harsh consonant clusters, guttural endings.
+CAIRN_HOLLOW_CULTURE = {"civilization": "Ostrivak", "demonym": "Ostrivi", "language": "Ostrivan", "religion_name": "the Ancestor-Wind", "religion_desc": "the dead do not leave — they ride the steppe wind as spirit-herds, and a name spoken aloud at dusk is a name they can still hear", "allowed": ["wild", "omen"], "phonemes": {"STONE": "khal", "IRON": "grosh", "FLINT": "grath", "WOLF": "vren", "STORM": "yur", "EAGLE": "verak", "ANVIL": "dresk", "SPEAR": "throk", "BANNER": "gavrik", "FROST": "yorv", "ASH": "dov", "OAK": "rask", "CEDAR": "dranik", "HEARTH": "khesh", "VOW": "zurak", "RAVEN": "zek", "MOON": "vak", "TIDE": "vosk", "THORN": "khiv", "HAWK": "krivan", "BROOK": "byen", "VALE": "ostro", "WILLOW": "shenk", "GRAIN": "kolvash", "LANTERN": "bosk", "EMBER": "ruun"}}

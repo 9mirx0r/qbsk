@@ -1,0 +1,64 @@
+// quit.qbsk — a game you can actually finish (docs/engine.md §18, §8.3).
+//
+//   qbsk run examples/quit.qbsk --ansi --loop --fps 20
+//
+// Three engine fixes meet here, and none of them was a feature:
+//
+//   §18   `exit()` from a handler ends the loop and sets the process exit code. It was
+//         ignored before, so a game could start and crash but not FINISH.
+//   §8.3  a held arrow moves one cell per FRAME, not once per press. Holding right used
+//         to cross the screen instantly at whatever rate the OS repeats keys.
+//   §18   the screen is the output in loop mode — this draws its state instead of
+//         printing it, which is the only thing that works under a diffed frame.
+//
+// Arrows move. `q` quits with 0. `x` quits with 3, so `echo %ERRORLEVEL%` shows a game
+// can report how it ended.
+
+var x = 10
+var y = 3
+var steps = 0
+
+scene Quit(width: 40, height: 9, title: "arrows move, q quits", fps: 20)
+
+layer floor z: 0
+    fill "."
+
+layer walls z: 1
+    color fg: bright-black
+    border (0, 0) to (39, 6) style: single
+
+layer player z: 5
+    color fg: bright-cyan
+    put "@" at (x, y)
+
+layer hud z: 10
+    color fg: bright-white
+    text "steps: " + str(steps) at (1, 7)
+    color fg: bright-black
+    text "arrows move   q = quit   x = quit(3)" at (1, 8)
+
+on key "arrow-left"
+    if x > 1
+        x = x - 1
+        steps = steps + 1
+
+on key "arrow-right"
+    if x < 38
+        x = x + 1
+        steps = steps + 1
+
+on key "arrow-up"
+    if y > 1
+        y = y - 1
+        steps = steps + 1
+
+on key "arrow-down"
+    if y < 5
+        y = y + 1
+        steps = steps + 1
+
+on key "q"
+    exit(0)
+
+on key "x"
+    exit(3)

@@ -1,0 +1,22 @@
+# QBSK — line ending normalisation.
+#
+# CRITICAL: this project compares golden files BYTE FOR BYTE (AGENTS.md RULE #3).
+# If git converts LF <-> CRLF on checkout, the goldens stop matching on another
+# machine or in CI. So the whole repo is stored and checked out as LF, and the
+# byte-exact artefacts are marked explicitly so git does NOT touch them at all.
+
+* text=auto eol=lf
+
+# Sources and specs: always LF.
+*.ts    text eol=lf
+*.js    text eol=lf
+*.mjs   text eol=lf
+*.json  text eol=lf
+*.md    text eol=lf
+*.qb    text eol=lf
+*.qbsk  text eol=lf
+
+# Byte-exact artefacts: git normalises NOTHING here.
+tests/golden/**  -text
+*.out            -text
+*.qba            -text

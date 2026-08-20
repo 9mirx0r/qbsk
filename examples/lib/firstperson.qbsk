@@ -1,0 +1,89 @@
+// firstperson.qbsk — placing things inside a cast view.
+//
+// `raycast` (§11.21) is a native because QBSK cannot run a DDA per column per frame.
+// None of THIS needs to be: putting an entity on screen is an `atan2`, a subtraction and
+// a comparison against the wall distance the caster already handed back. Spending frozen
+// native surface on what the language says is how a small language stops being small
+// (§11.18) — the same argument that kept `cinematic.qbsk` out of the engine.
+
+// ---------------------------------------------------------------------------
+// Bearing
+// ---------------------------------------------------------------------------
+
+// Folds an angle into -pi..pi.
+//
+// Not cosmetic. A player facing just west of north and an entity just east of it differ
+// by a few degrees of bearing and by nearly a full turn of raw angle. Without this, that
+// entity is off screen while standing directly in front of the player — a bug that only
+// appears in one heading out of four and therefore survives casual play.
+export func wrap_angle(a)
+    var out = a
+    while out > pi()
+        out = out - 2.0 * pi()
+    while out < 0.0 - pi()
+        out = out + 2.0 * pi()
+    return out
+
+// ---------------------------------------------------------------------------
+// Billboards
+// ---------------------------------------------------------------------------
+
+// Where an entity at (ex, ey) lands: [column, depth, on_screen].
+//
+// `depth` is PERPENDICULAR — measured along the camera's forward axis, exactly as
+// `raycast` measures a wall. Measuring it radially would make an entity read as further
+// away than a wall it is level with, so it would hide behind that wall at the edges of
+// the view while standing in front of it at the centre.
+//
+// A column of -1 accompanies `false`, so a caller that forgets to check still indexes
+// somewhere obviously wrong rather than somewhere plausible.
+export func billboard(eye, ex, ey, columns, fov)
+    // The guarantee above is the one this breaks first. With `columns` at 0 it answered
+    // [-1, depth, TRUE] and with -3 it answered [-4, depth, true] — the sentinel and the
+    // flag disagreeing, which is worse than either being wrong alone, because a caller
+    // that DOES check `on_screen` is then handed a negative index.
+    if columns < 1
+        fail("billboard: a view needs at least 1 column, got " + str(columns))
+    // A zero field of view divided by zero and reported from the arithmetic below rather
+    // than from the argument that made it impossible; 360 or more is not a view.
+    if fov <= 0.0 or fov >= 360.0
+        fail("billboard: the field of view must be between 0 and 360 degrees, got " + str(fov))
+    var dx = ex - eye["x"]
+    var dy = ey - eye["y"]
+    var span = sqrt(dx * dx + dy * dy)
+    var bearing = wrap_angle(atan2(dy, dx) - eye["angle"])
+    var half = fov * pi() / 180.0 / 2.0
+    if bearing < 0.0 - half or bearing > half
+        return [0 - 1, span * cos(bearing), false]
+    var col = int((bearing + half) / (half * 2.0) * float(columns))
+    if col >= columns
+        col = columns - 1
+    return [col, span * cos(bearing), true]
+
+// Whether a wall at `wall` hides an entity at `depth` in the same column.
+//
+// A separate function rather than an inline `>` because the direction is easy to write
+// backwards once and then read as correct forever.
+export func hidden(depth, wall)
+    return wall < depth
+
+// ---------------------------------------------------------------------------
+// Height
+// ---------------------------------------------------------------------------
+
+// Half the height a thing `depth` away should draw, given the horizon row.
+//
+// The SAME falloff the walls use, which is the point: an entity scaled by a different
+// curve stands on a floor that recedes at another rate, and reads as a sticker on the
+// screen rather than as a body in the room. The clamp keeps something pressed against
+// the eye inside the frame.
+export func column_height(horizon, depth)
+    // `depth` is a distance from the eye. A negative one answered a NEGATIVE height —
+    // `column_height(20.0, -0.5)` was -50 — and a caller drawing minus fifty rows draws
+    // nothing and finds out somewhere else entirely. Exactly -0.1 divided by zero.
+    if depth < 0.0
+        fail("column_height: depth is a distance from the eye and cannot be negative, got " + str(depth))
+    var h = int(horizon / (depth + 0.1))
+    if h > int(horizon)
+        return int(horizon)
+    return h

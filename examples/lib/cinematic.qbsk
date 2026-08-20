@@ -1,0 +1,151 @@
+// cinematic.qbsk — the vocabulary a scripted scene needs, written in QBSK.
+//
+// Nothing here is a native and nothing here asked for one. `border` draws the box,
+// `put` draws the speech, `timeline_*` already schedules beats and `animate` already moves
+// figures — what was missing was the composition, and composition belongs in a library.
+// Spending frozen native surface (§17.1) on what QBSK can already express is how a small
+// language stops being small.
+//
+// The one thing the engine genuinely lacks is speech wrapping. It is written below out of
+// `split`, `join` and `len` rather than argued for as a native; if a scene ever measures
+// it as too slow, that measurement is the argument, not the inconvenience.
+
+// ---------------------------------------------------------------------------
+// Wrapping
+// ---------------------------------------------------------------------------
+
+// Breaks `speech` into lines of at most `width` characters, splitting on spaces.
+//
+// A word longer than the whole line is emitted on its own line and allowed to overflow
+// rather than being cut. Truncating it would silently lose characters, and a name that
+// runs past the frame is a visible bug the author can fix; a name missing its last three
+// letters is one nobody notices until a reader does.
+export func wrap(speech, width)
+    if width < 1
+        return [speech]
+    var words = split(trim(speech), " ")
+    var lines = []
+    var current = ""
+    var i = 0
+    while i < len(words)
+        var word = words[i]
+        if word == ""
+            i += 1
+        else
+            var candidate = current
+            if current == ""
+                candidate = word
+            else
+                candidate = current + " " + word
+            if len(candidate) <= width
+                current = candidate
+            else
+                if current != ""
+                    lines = push(lines, current)
+                current = word
+            i += 1
+    if current != ""
+        lines = push(lines, current)
+    if len(lines) == 0
+        return [""]
+    return lines
+
+// ---------------------------------------------------------------------------
+// The dialogue box
+// ---------------------------------------------------------------------------
+
+// How many rows a box needs to hold this speech: border, speaker line, and the wrapped
+// body. Asked for BEFORE drawing so the caller can place the box against the bottom of
+// the frame without guessing and then discovering it overflowed.
+export func box_height(speech, width, speaker)
+    // The border takes four columns, so a width under five leaves nothing for a
+    // character of text. This function exists to be asked BEFORE drawing, so a caller
+    // "can place the box against the bottom of the frame without guessing and then
+    // discovering it overflowed" -- and it used to answer 4 rows for a width of 4, which
+    // is the discovery it exists to prevent, made one step later.
+    if width < 5
+        fail("a dialogue box needs a width of at least 5 -- four for the border and one for text -- got " + str(width))
+    var inner = width - 4
+    var lines = wrap(speech, inner)
+    var body = len(lines)
+    if speaker == ""
+        return body + 2
+    return body + 3
+
+// The wrapped body, one string per row, already padded to the inner width so a caller
+// can draw them without measuring again.
+export func box_lines(speech, width)
+    // The border takes four columns, so a width under five leaves nothing for a
+    // character of text. This function exists to be asked BEFORE drawing, so a caller
+    // "can place the box against the bottom of the frame without guessing and then
+    // discovering it overflowed" -- and it used to answer 4 rows for a width of 4, which
+    // is the discovery it exists to prevent, made one step later.
+    if width < 5
+        fail("a dialogue box needs a width of at least 5 -- four for the border and one for text -- got " + str(width))
+    var inner = width - 4
+    var lines = wrap(speech, inner)
+    var out = []
+    var i = 0
+    while i < len(lines)
+        out = push(out, lines[i])
+        i += 1
+    return out
+
+// ---------------------------------------------------------------------------
+// Beats
+// ---------------------------------------------------------------------------
+
+// Which beat is speaking at time `t`, looping the whole timeline, or -1 between beats.
+//
+// Returns an INDEX rather than the line itself: a caller usually wants to know both who
+// is speaking and what is said, and an index answers both from one call while a string
+// answers only the second.
+export func beat_at(tl, t)
+    var active = timeline_active(tl, t % timeline_duration(tl))
+    if len(active) == 0
+        return 0 - 1
+    return int(active[0])
+
+// How far through its own beat the scene is, 0..1, or -1 when nothing is speaking.
+// Useful for a typewriter reveal or a figure that finishes a gesture on the line.
+export func beat_progress(tl, t, index)
+    return timeline_progress(tl, str(index), t % timeline_duration(tl))
+
+// ---------------------------------------------------------------------------
+// Entrances
+// ---------------------------------------------------------------------------
+
+// ⚠️ The parameter below is named `enters` and not `at` because `at` is a reserved
+// keyword — `put X at (x, y)`. Twenty-five of the fifty-one keywords belong to the scene
+// DSL and are unusable as names even in a file that never draws.
+//
+// That rename was originally done as a global find-and-replace, and it ate the PROSE:
+// six comments in this file read "at most" as "enters most", "at time t" as "enters time
+// t", and "should be drawn at all" as "should be drawn enters all". Repaired 2026-08-19.
+// If the parameter is ever renamed again, rename it, not the English.
+// Where a figure is when it walks from `from_x` to `to_x` across `seconds`, starting at
+// `enters`. Before it starts it waits off-frame at `from_x`; after it arrives it stays.
+//
+// Eased rather than linear, because a character that starts and stops at full speed
+// reads as a sprite being moved rather than a person walking in.
+export func entrance_x(from_x, to_x, enters, seconds, now)
+    // A negative duration made `now >= enters + seconds` true BEFORE the entrance
+    // started, so the figure arrived at its destination ahead of its own cue. Zero is
+    // allowed and means exactly what it says: an instant entrance.
+    if seconds < 0.0
+        fail("an entrance cannot take a negative number of seconds, got " + str(seconds))
+    if now <= enters
+        return from_x
+    if now >= enters + seconds
+        return to_x
+    var p = (now - enters) / seconds
+    return from_x + (to_x - from_x) * (0.0 - (cos(p * pi()) / 2.0) + 0.5)
+
+// Whether a figure that enters at `enters` and leaves at `until` should be drawn at all.
+// A scene with four characters that appear in turn asks this per figure per frame.
+export func on_stage(enters, until, now)
+    if now < enters
+        return false
+    if until < 0.0
+        return true
+    return now < until
