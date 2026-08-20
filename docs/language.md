@@ -2053,6 +2053,37 @@ arithmetic.
 **And `//` cannot be integer division** — it opens a line comment. Any future operator for
 it has to be a character the language does not already spend.
 
+### 15.18 `contains` answers for lists too
+
+`contains` was string-only, and there was no way at all to ask whether a LIST held a
+value. `find` and `without` are for entities; `has` is for dicts. So every program that
+needed the commonest question in programming wrote it out:
+
+```qbsk
+func holds(list, value)
+    for item in list
+        if item == value
+            return true
+    return false
+```
+
+That exact function was written by hand twice in one codebase, in two modules, three weeks
+apart. A rule a language makes you re-derive is a rule the language has not learned.
+
+**`contains(haystack, needle)` now takes a string or a list.** On a string it is unchanged
+— the same substring test, byte for byte. On a list it compares with the same equality `==`
+uses, so it answers for ints, floats, strings and bools, and reports on a list of dicts
+rather than guessing at what "the same dict" means.
+
+**Why this is not a §17.1 break.** The freeze says a native is not *given different
+semantics*. A list argument used to REPORT — `'contains' expects a str, got 'list'` — so no
+program that ran can tell the difference. Widening an error into an answer cannot change
+what a working program does, which is the same argument §15.15 made for the scene words.
+
+**`x in list` was considered and not built.** `in` is already the loop keyword, so reading
+it as an operator is a grammar change rather than an addition, and §17.1 promises the
+grammar. A native says the same thing and costs nothing to keep true.
+
 ### 15.11 A program can raise its own error — `fail` (I2, I3)
 
 `try`/`catch` has existed since L9, and every error it ever caught came from the engine.

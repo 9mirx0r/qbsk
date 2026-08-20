@@ -4,7 +4,7 @@ import { cellOf } from "../engine/cell.js";
 import { Env } from "./env.js";
 import { QbskRuntimeError } from "./error.js";
 import { closest } from "../util/suggest.js";
-import { qbskStr, truthy, typeName, type QValue } from "./value.js";
+import { qbskEq, qbskStr, truthy, typeName, type QValue } from "./value.js";
 import { serializeState } from "./saveState.js";
 import { loadQbdata } from "../parser/qbdata.js";
 import { mulberry32 } from "../util/random.js";
@@ -1466,9 +1466,32 @@ export function createNatives(io: HostIO, opts: NativeOptions = {}): Env {
     return { type: "str", value: s.replaceAll(from, to) };
   });
 
+  // §15.18 — a string OR a list. It was string-only, and nothing in the language could ask
+  // whether a list held a value, so the four-line loop got written by hand in two modules
+  // of one codebase three weeks apart. A rule a language makes you re-derive is a rule the
+  // language has not learned.
+  //
+  // Not a §17.1 break: a list argument used to REPORT, so no program that ran can tell the
+  // difference. Widening an error into an answer cannot change what a working program does.
+  const COMPARABLE = new Set(["int", "float", "str", "bool", "null"]);
   native("contains", (args, span) => {
     expectArgs("contains", args, 2, span);
-    const s = expectStr("contains", args[0]!, span);
+    const haystack = args[0]!;
+    if (haystack.type === "list") {
+      const needle = args[1]!;
+      if (!COMPARABLE.has(needle.type)) {
+        throw new QbskRuntimeError(
+          `'contains' compares values the way '==' does, and cannot compare a ` +
+            `'${typeName(needle)}' — use a loop and decide what "the same" means`,
+          span,
+        );
+      }
+      return {
+        type: "bool",
+        value: haystack.items.some((item) => qbskEq(item, needle)),
+      };
+    }
+    const s = expectStr("contains", haystack, span);
     const sub = expectStr("contains", args[1]!, span);
     return { type: "bool", value: s.includes(sub) };
   });
