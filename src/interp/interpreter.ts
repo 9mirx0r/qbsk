@@ -8,7 +8,7 @@ import { NAMEABLE_DSL_WORDS, parse } from "../parser/parser.js";
 import { loadQbdata } from "../parser/qbdata.js";
 import { closest } from "../util/suggest.js";
 import { Env } from "./env.js";
-import type { QbskError } from "./error.js";
+import type { QbskError, QbskFrame } from "./error.js";
 import { QbskRuntimeError } from "./error.js";
 import { createNatives, ExitSignal, type GameRuntime, type HostIO, type SaveStore } from "./natives.js";
 import { mountScene } from "./sceneMount.js";
@@ -889,7 +889,11 @@ export class Interpreter {
   }
 
   private runtime(message: string, span: Span): never {
-    throw new QbskRuntimeError(message, span);
+    const err = new QbskRuntimeError(message, span);
+    // Captured at THROW time: by the time an error reaches a handler the stack has
+    // unwound and `functionDepth` has been restored by the `finally` in `callValue`.
+    err.trace = this.captureTrace();
+    throw err;
   }
 
   /**
@@ -3010,6 +3014,38 @@ export class Interpreter {
     );
   }
 
+  /**
+   * The route to an error: one name and one call span per depth (§15.20).
+   *
+   * Written into SLOTS indexed by `functionDepth`, which the interpreter already keeps, so
+   * a call costs two array writes and no allocation once a program is warm. A pushed and
+   * popped array would allocate on every call in the hottest path in the language.
+   */
+  private readonly frameNames: string[] = [];
+  private readonly frameSpans: (Span | null)[] = [];
+
+  /** The frames as the error will carry them, innermost first. */
+  private captureTrace(): QbskFrame[] {
+    const out: QbskFrame[] = [];
+    for (let d = this.functionDepth - 1; d >= 0; d -= 1) {
+      const span = this.frameSpans[d];
+      out.push({
+        name: this.frameNames[d] ?? "?",
+        line: span?.start.line ?? 0,
+        file: span?.file ?? "",
+      });
+    }
+    return out;
+  }
+
+  /** Attaches the route to an error on its way out, and leaves anything else alone. */
+  private withTrace(err: unknown): unknown {
+    if (err instanceof QbskRuntimeError && err.trace.length === 0) {
+      err.trace = this.captureTrace();
+    }
+    return err;
+  }
+
   private callValue(
     callee: QValue,
     args: QValue[],
@@ -3028,7 +3064,15 @@ export class Interpreter {
           this.mutationEpoch += 1;
         }
       }
-      return callee.fn(args, span);
+      // A native throws its own error, so the route has to be attached here rather than
+      // in `runtime()`. Most errors in a QBSK program are a native's -- a bad argument, a
+      // missing key -- and a trace that covered only interpreter errors would be the same
+      // feature with better odds.
+      try {
+        return callee.fn(args, span);
+      } catch (err) {
+        throw this.withTrace(err);
+      }
     }
     if (callee.type === "func") {
       if (callee.params.length !== args.length) {
@@ -3053,6 +3097,8 @@ export class Interpreter {
       const parentEnv = this.env;
       const parentLoop = this.loopDepth;
       const parentFunc = this.functionDepth;
+      this.frameNames[this.functionDepth] = callee.name;
+      this.frameSpans[this.functionDepth] = span;
       this.env = callEnv;
       this.loopDepth = 0;
       this.functionDepth += 1;

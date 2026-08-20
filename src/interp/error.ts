@@ -20,18 +20,63 @@ export class QbskSyntaxError extends QbskError {
   }
 }
 
+/** One call on the way to an error: the function, and the line it was called from. */
+export interface QbskFrame {
+  name: string;
+  line: number;
+  file: string;
+}
+
 export class QbskRuntimeError extends QbskError {
+  /**
+   * The calls that led here, innermost first (§15.20).
+   *
+   * Filled by the interpreter at THROW time, because by the time an error reaches a
+   * handler the stack has already unwound and the depth counter has been restored.
+   * Mutable for that reason and for no other.
+   */
+  trace: QbskFrame[] = [];
+
   constructor(message: string, span: Span) {
     super(message, span, "runtime");
     this.name = "QbskRuntimeError";
   }
 }
 
+// How much of a deep recursion is worth printing. A thousand identical lines is not a
+// trace, it is a wall, and the two ends are what a reader uses.
+const TRACE_HEAD = 4;
+const TRACE_TAIL = 2;
+
+/**
+ * The frames under the fragment, or "" when there are none.
+ *
+ * Top-level code has no frame and shows the span alone, exactly as it always did.
+ */
+export function qbskTrace(err: QbskError): string {
+  const frames = err instanceof QbskRuntimeError ? err.trace : [];
+  if (frames.length === 0) {
+    return "";
+  }
+  const line = (f: QbskFrame, i: number): string =>
+    `   ${i === 0 ? "in" : "from"} ${f.name} (${f.file}:${f.line})`;
+  if (frames.length <= TRACE_HEAD + TRACE_TAIL + 1) {
+    return frames.map(line).join("\n");
+  }
+  const head = frames.slice(0, TRACE_HEAD).map(line);
+  const tail = frames.slice(-TRACE_TAIL).map((f, i) => line(f, i + TRACE_HEAD));
+  const dropped = frames.length - TRACE_HEAD - TRACE_TAIL;
+  return [...head, `   ... ${dropped} more`, ...tail].join("\n");
+}
+
 export function formatQbskError(source: string, err: QbskError): string {
   const { start, file } = err.span;
   const header = `${file}:${start.line}:${start.col} — ${err.kind}: ${err.message}`;
   const fragment = qbskFragment(source, err);
-  return fragment === "" ? header : `${header}\n${fragment}`;
+  const trace = qbskTrace(err);
+  // The trace is an ADDITION. If it ever replaced the fragment it would be a downgrade:
+  // the fragment says where, and the trace says how it got there.
+  return [header, fragment, trace].filter((part) => part !== "").join("\n");
 }
 
 // The `^^^` fragment under the offending source line — the exact lines formatQbskError

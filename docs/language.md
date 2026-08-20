@@ -2114,6 +2114,58 @@ Neither is a §17.1 break. `format` is new, and adding is not breaking. `slice` 
 used to REPORT, so no program that ran can tell the difference — the same argument §15.18
 made for `contains` and §15.15 made for the scene words.
 
+### 15.20 A runtime error says which calls led to it
+
+QBSK's errors carry a span and a fragment, and that is the language's best feature. What
+they never carried is the ROUTE. An error four calls deep reported the innermost line and
+nothing else:
+
+```
+sim.qbsk:88:24 — runtime: a list index must be an int, got 'float'
+   |
+88 |     return table[at]
+   |            ^^^^^^^^^
+```
+
+Which is true, and useless. `table[at]` is a general-purpose accessor called from thirty
+places; the question is which of the thirty, and the message answered by saying nothing.
+
+**A runtime error now lists the calls that led to it, innermost first:**
+
+```
+sim.qbsk:88:24 — runtime: a list index must be an int, got 'float'
+   |
+88 |     return table[at]
+   |            ^^^^^^^^^
+   in lookup (sim.qbsk:88)
+   from capacity (sim.qbsk:141)
+   from step (sim.qbsk:512)
+```
+
+Three rules it follows:
+
+- **The innermost frame is named even at depth one**, because "in `lookup`" is information
+  when the span is inside a function the caller did not write.
+- **Deep recursion is elided in the middle** — the first four frames, then how many were
+  dropped, then the last two. A thousand identical lines is not a trace, it is a wall, and
+  the two ends are what a reader uses.
+- **Top-level code has no frame.** An error outside every function shows the span alone, as
+  it always did.
+
+**It costs two array writes per call**, into slots indexed by the depth counter the
+interpreter already keeps, so nothing is allocated once a program is warm and a frame that
+does not fail pays nothing else.
+
+**Measured, A/B, back to back in one sitting (§13.1): 673 ms against 658 ms — 2.3%** on a
+program of 600,000 function calls and almost nothing else. That is a real cost and not
+noise, and this paragraph said "inside the noise" until the measurement was taken, which is
+the mistake §13.1 exists to stop.
+
+Kept at that price because the benchmark is the worst case by construction: it is call
+saturated, while a real QBSK frame spends most of its time in the engine rather than in
+dispatch. An error that names the route is worth 2% of the dispatch cost of a program that
+does nothing but dispatch.
+
 ### 15.11 A program can raise its own error — `fail` (I2, I3)
 
 `try`/`catch` has existed since L9, and every error it ever caught came from the engine.
