@@ -99,6 +99,15 @@ export interface StudioApi {
    * one would put a list nobody looked at through the IPC boundary 30 times a second.
    */
   inspect(): Promise<InspectState>;
+  /**
+   * The files opened recently, most recent first (docs/studio.md §20).
+   *
+   * Already filtered to files that still exist: a menu row that opens a dialog saying
+   * "not found" is worse than no row, because it costs a click to learn nothing.
+   */
+  recentFiles(): Promise<string[]>;
+  /** Opens one of them without a dialog. Null when it has gone since the list was read. */
+  openRecent(file: string): Promise<{ file: string; source: string } | null>;
   /** Called when a running scene stops because it failed (docs/studio.md §18). */
   onLiveError(handler: (failure: LiveFailure) => void): void;
   stopLive(): Promise<void>;

@@ -123,7 +123,7 @@ npm run studio
 | `examples/` | **49 runnable programs**, from four lines to a playable first-person demo |
 | `docs/` | the specification: `language.md`, `engine.md`, `audio.md`, `studio.md`, and `tour.md` |
 | `skills/` | **the manual — read this before writing QBSK** |
-| `tests/` | **1,991 tests green across 112 files**, with 26 byte-for-byte golden outputs |
+| `tests/` | **2,007 tests green across 113 files**, with 26 byte-for-byte golden outputs |
 | `bench/` | the performance harness and its recorded baselines |
 
 ### `skills/` is not optional reading

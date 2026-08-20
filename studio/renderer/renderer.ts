@@ -10,6 +10,7 @@ import { CRT_PRESETS, crtById } from "./glshader.js";
 import { fitFontSize, gridForBox, snapToFontGrid, CELL_ASPECT, cellAspectFor } from "./fit.js";
 import { gutterRows, selectionFor, stripText } from "../shared/marks.js";
 import { emptyText } from "../shared/inspect.js";
+import { recentLabel } from "../shared/recent.js";
 import type { InspectState } from "../shared/api.js";
 import type { ErrorMark } from "../shared/marks.js";
 import { FONTS, DEFAULT_FONT_ID, fontById, type FontChoice } from "./fonts.js";
@@ -841,11 +842,13 @@ el("btnStop").addEventListener("click", () => void stopLive());
  * Stops whatever is running BEFORE loading. A live program from the previous file would
  * otherwise keep painting over the new one, which reads as the open having failed.
  */
-async function openScene(): Promise<void> {
-  const picked = await api.openScene();
-  if (picked === null) {
-    return;
-  }
+
+// --- Recent files (docs/studio.md §20) -----------------------------------------
+
+const recentMenu = el("recentMenu");
+
+/** Loads a scene the same way `openScene` does, so there is one way to open a file. */
+async function loadScene(picked: { file: string; source: string }): Promise<void> {
   await stopLive();
   currentFile = picked.file;
   setEditorSource(picked.source);
@@ -853,6 +856,75 @@ async function openScene(): Promise<void> {
   log("ok", `open → ${baseName(picked.file)}`);
   // Run it: a scene that opens to a blank canvas looks like the open did not work.
   await startLive(picked.source, picked.file);
+}
+
+function hideRecent(): void {
+  recentMenu.hidden = true;
+  recentMenu.replaceChildren();
+}
+
+async function showRecent(): Promise<void> {
+  if (!recentMenu.hidden) {
+    hideRecent();
+    return;
+  }
+  const files = await api.recentFiles();
+  recentMenu.replaceChildren();
+  if (files.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "rec-empty";
+    empty.textContent = "nothing opened yet — use the Open button";
+    recentMenu.appendChild(empty);
+  }
+  for (const file of files) {
+    const row = document.createElement("button");
+    row.type = "button";
+    row.className = "rec-row";
+    // textContent: a folder can be called anything, including something that parses as
+    // markup, and a path is never markup.
+    row.textContent = recentLabel(file);
+    row.title = file;
+    row.addEventListener("click", () => {
+      hideRecent();
+      void (async () => {
+        const picked = await api.openRecent(file);
+        if (picked === null) {
+          // Renamed or deleted between the menu opening and the click. Reported rather
+          // than silently doing nothing, which reads as a broken button.
+          log("err", `open → ${baseName(file)} is no longer there`);
+          return;
+        }
+        await loadScene(picked);
+      })();
+    });
+    recentMenu.appendChild(row);
+  }
+  recentMenu.hidden = false;
+}
+
+el("btnFolder").addEventListener("click", () => {
+  void showRecent();
+});
+// Anywhere else closes it. Without this the menu stays open behind the next click and
+// covers the toolbar buttons under it.
+document.addEventListener("click", (event) => {
+  const target = event.target;
+  if (
+    !recentMenu.hidden &&
+    target instanceof Node &&
+    !recentMenu.contains(target) &&
+    !el("btnFolder").contains(target)
+  ) {
+    hideRecent();
+  }
+});
+
+async function openScene(): Promise<void> {
+  const picked = await api.openScene();
+  if (picked === null) {
+    return;
+  }
+  await loadScene(picked);
 }
 
 el("btnOpen").addEventListener("click", () => void openScene());

@@ -2,7 +2,7 @@
 // This is the ONLY file that imports "electron" besides the preload. All QBSK
 // work is delegated to the pure host (./host.js).
 import { app, BrowserWindow, dialog, ipcMain, Menu } from "electron";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readScene, runStaticScene, StudioFrameHost } from "./host.js";
@@ -11,6 +11,7 @@ import { journalPath } from "../mcp/journal.js";
 import { WindowMirror } from "../mcp/window.js";
 import { keyFromDom } from "../../src/engine/keys.js";
 import { EngineConsole } from "./console.js";
+import { addRecent, samePath } from "../shared/recent.js";
 import { AudioDevice } from "../../src/audio/device.js";
 import { loadTileset, tileDataUrls } from "../../src/engine/tileset.js";
 import { formatQbskError } from "../../src/interp/error.js";
@@ -118,6 +119,47 @@ const DEFAULT_SCENE = resolve(repoRoot, "examples", "hello.qbsk");
 
 // The console draws itself (docs/studio.md §14.3): it is a QBSK scene, not a CSS panel.
 const CONSOLE_SCENE = resolve(repoRoot, "examples", "console.qbsk");
+
+// --- Recent files (docs/studio.md §20) -----------------------------------------
+
+/**
+ * Where the list lives: one small JSON beside the app's own settings.
+ *
+ * NOT in the repository. The list is about this machine and this person, and a file in
+ * the working tree would follow the project into a commit and tell whoever cloned it
+ * which folders somebody else keeps their scenes in.
+ */
+function recentPath(): string {
+  return join(app.getPath("userData"), "recent-files.json");
+}
+
+function readRecent(): string[] {
+  try {
+    const raw: unknown = JSON.parse(readFileSync(recentPath(), "utf8"));
+    if (!Array.isArray(raw)) {
+      return [];
+    }
+    // Filtered to what still exists, so the menu never offers a row that opens nothing.
+    // A file deleted outside the Studio is the normal case, not the exception.
+    return raw.filter((p): p is string => typeof p === "string" && existsSync(p));
+  } catch {
+    // Missing, unreadable or not JSON. A recent-files list is not worth an error
+    // dialog, and a corrupt one should cost the list, not the launch.
+    return [];
+  }
+}
+
+function writeRecent(list: readonly string[]): void {
+  try {
+    writeFileSync(recentPath(), JSON.stringify(list, null, 2), "utf8");
+  } catch {
+    // A read-only profile, a full disk. The Studio still works without the list.
+  }
+}
+
+function noteRecent(file: string): void {
+  writeRecent(addRecent(readRecent(), resolve(file)));
+}
 
 function createWindow(): BrowserWindow {
   const win = new BrowserWindow({
@@ -236,6 +278,7 @@ void app.whenReady().then(() => {
       if (result.canceled || result.filePaths.length === 0) {
         return null;
       }
+      noteRecent(result.filePaths[0]!);
       return readScene(result.filePaths[0]!);
     },
   );
@@ -342,6 +385,23 @@ void app.whenReady().then(() => {
   // because `varNames()` and `inspect()` belong to the host, and clipped here rather
   // than there because an unclipped list of ten thousand cells would cross the IPC
   // boundary before anyone decided it was too long to read.
+  ipcMain.handle("studio:recentFiles", (): string[] => readRecent());
+
+  ipcMain.handle(
+    "studio:openRecent",
+    (_event, file: string): { file: string; source: string } | null => {
+      // Checked again HERE and not only when the list was read. The list is read once
+      // when the menu opens; the file can be renamed while the menu is on screen, and a
+      // throw from `readFileSync` in a handler is an unhandled rejection in the renderer.
+      if (!existsSync(file)) {
+        writeRecent(readRecent().filter((p) => !samePath(p, file)));
+        return null;
+      }
+      noteRecent(file);
+      return readScene(file);
+    },
+  );
+
   ipcMain.handle("studio:inspect", (): InspectState => {
     if (liveHost === null) {
       return { live: false, rows: [] };

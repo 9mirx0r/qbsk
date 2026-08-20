@@ -115,6 +115,8 @@ body {
 /* --- Icon toolbar: raised bevel buttons, groups split by beveled separators --- */
 
 #toolbar {
+  /* The anchor the recent-files menu hangs from (docs/studio.md §20). */
+  position: relative;
   flex: none;
   height: 34px;
   display: flex;
@@ -593,4 +595,47 @@ body.play #playHint {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* --- The recent-files menu (docs/studio.md §20) --- */
+
+#recentMenu {
+  position: absolute;
+  /* Measured against #toolbar, which is why it is a child of it. */
+  top: 100%;
+  left: 34px;
+  z-index: 40;
+  min-width: 220px;
+  max-width: 420px;
+  padding: 3px;
+  background: var(--panel);
+  border: 2px solid;
+  border-color: var(--bev-light) var(--bev-dark) var(--bev-dark) var(--bev-light);
+  box-shadow: 2px 2px 0 #04101c;
+}
+
+.rec-row {
+  display: block;
+  width: 100%;
+  border: none;
+  padding: 3px 8px;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 11px;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rec-row:hover {
+  background: var(--bev-light);
+}
+
+.rec-empty {
+  padding: 4px 8px;
+  color: var(--gutter);
+  font-size: 11px;
 }

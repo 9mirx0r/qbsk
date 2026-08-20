@@ -60,6 +60,15 @@ const api: StudioApi = {
   async resize(cols: number, rows: number) {
     await ipcRenderer.invoke("studio:resize", cols, rows);
   },
+  async recentFiles() {
+    return (await ipcRenderer.invoke("studio:recentFiles")) as string[];
+  },
+  async openRecent(file: string) {
+    return (await ipcRenderer.invoke("studio:openRecent", file)) as {
+      file: string;
+      source: string;
+    } | null;
+  },
   async inspect() {
     return (await ipcRenderer.invoke("studio:inspect")) as InspectState;
   },

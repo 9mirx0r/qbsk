@@ -1269,3 +1269,52 @@ It does not let you EDIT a value, expand a list, or set a watch. Editing means w
 a running interpreter from outside it, which is a much larger decision than a read-only
 pane, and `get`/`set` in the engine console is the place that argument belongs.
 
+## 20. The files you actually work on
+
+### 20.1 The problem
+
+Opening a scene meant a modal file dialog, starting at `examples/`, every single time. So
+returning to the file you were editing five minutes ago cost a dialog, a folder walk and a
+double click — for a file the Studio had just had open. The folder button in the toolbar
+was wired to nothing at all.
+
+### 20.2 What it does now
+
+The folder button drops a list of the files opened recently, most recent first, and one
+click opens one. The list survives closing the Studio.
+
+### 20.3 What is worth knowing
+
+**The list lives beside the app's own settings, not in the repository.** It is about this
+machine and this person. A file in the working tree would follow the project into a commit
+and tell whoever cloned it which folders somebody else keeps their scenes in.
+
+**One file is one entry however it was spelled.** Compared case-sensitively and
+separator-sensitively, `C:\x\a.qbsk` and `c:/x/a.qbsk` are two rows for one file, and on
+Windows both spellings arrive depending on how the file was opened.
+
+**Files that have gone are filtered out when the list is read, and checked AGAIN when a
+row is clicked.** The list is read once when the menu opens, and a file can be renamed
+while the menu is on screen — and an unguarded `readFileSync` in a handler is an unhandled
+rejection in the renderer, which is the fatal overlay for a missing file.
+
+**A corrupt list costs the list, not the launch.** Missing, unreadable or not JSON all
+return an empty list. A recent-files list is not worth an error dialog and is certainly
+not worth failing to start over.
+
+**Opening goes through one function.** The dialog path and the menu path both call
+`loadScene`, so a scene opened either way stops the live program, replaces the source
+through `setEditorSource` (§18), updates the status bar and runs — rather than two paths
+that drift apart at the third thing one of them remembers to do.
+
+**The menu is a child of the toolbar.** It is positioned with `top: 100%`, which means
+"under the toolbar" only because the toolbar is its offset parent. The first version was a
+sibling and landed at the top of the window, over the title bar — found by opening it and
+measuring, not by reading it.
+
+### 20.4 What it does not do
+
+There is no file TREE, and no folder to browse. A tree needs a pane, and the window is
+already dense; the value in this feature is getting back to the four files you are
+actually editing, which a list of ten does completely. Nothing here writes files, renames
+them or deletes them.

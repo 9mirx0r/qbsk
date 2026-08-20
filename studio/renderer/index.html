@@ -114,6 +114,10 @@
         <circle cx="8" cy="10" r="2.4" />
       </svg>
     </button>
+    <!-- The recent-files menu hangs from the toolbar (docs/studio.md §20). It lives
+         INSIDE it so `top: 100%` means "under the toolbar" rather than "at the top of
+         the window", which is where it landed the first time. -->
+    <div id="recentMenu" hidden></div>
   </div>
 
   <div id="midrow">
