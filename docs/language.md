@@ -2018,6 +2018,41 @@ it, exactly as it already did for the sixteen names — which are emitted as tru
 and always have been. Nothing about the emission changed; only what an author is allowed to
 write.
 
+### 15.17 An index that is a float says what to write instead
+
+`/` returns a float whatever its operands, and §17.1 freezes that. In a language whose
+commonest values are grid coordinates, that is a trap: `span / 2` reads like integer
+division to anyone arriving from C, Go or Java, and QBSK hands back `1.5`.
+
+The trap is not the semantics — it is the DISTANCE. The float is produced on one line and
+reported on another, often in a different function, as:
+
+```
+a list index must be an int, got 'float'
+```
+
+which names the symptom and not the cause. Nothing in that sentence tells an author that
+the arithmetic three lines up is where to look, and it cost four separate incidents in one
+file while the interface layer was being written.
+
+**A float index now says what to write:**
+
+```
+a list index must be an int, got 'float' — `/` is float division whatever its
+operands, so wrap the arithmetic: int(a / b)
+```
+
+All four index sites say it — lists read, lists written, strings and tuples — because a
+message written for one of them and not the others is the same defect with better odds.
+
+**Deliberately NOT changed: `int / int` still returns a float.** §17.1 freezes the meaning
+of the operators, and this is the kind of break that is worst: a program that used to run
+keeps running and quietly returns different numbers. The fix is the diagnosis, not the
+arithmetic.
+
+**And `//` cannot be integer division** — it opens a line comment. Any future operator for
+it has to be a character the language does not already spend.
+
 ### 15.11 A program can raise its own error — `fail` (I2, I3)
 
 `try`/`catch` has existed since L9, and every error it ever caught came from the engine.

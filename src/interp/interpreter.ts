@@ -693,6 +693,27 @@ type CompilableStmt = Stmt & { compiledStmt?: StmtThunk };
 
 /** A block node with its compiled form attached. */
 type CompilableBlock = Block & { compiledBlock?: BlockThunk };
+/**
+ * "must be an int" plus, when the value is a float, what to write instead (§15.17).
+ *
+ * `/` returns a float whatever its operands and §17.1 freezes that, so the fix is the
+ * diagnosis rather than the arithmetic. The advice is attached ONLY to floats: on a string
+ * or a bool index it would be noise, and noise is how a good diagnostic stops being read.
+ *
+ * One function for all four index sites — a list read, a list write, a string and a tuple.
+ * Written for one of them and not the others it would be the same defect with better odds.
+ */
+function indexTypeError(what: string, index: QValue): string {
+  const base = `a ${what} index must be an int, got '${typeName(index)}'`;
+  if (index.type !== "float") {
+    return base;
+  }
+  return (
+    base +
+    " — `/` is float division whatever its operands, so wrap the arithmetic: int(a / b)"
+  );
+}
+
 export class Interpreter {
   private env: Env;
   private readonly nativeEnv: Env;
@@ -1967,7 +1988,7 @@ export class Interpreter {
         const key = index(ip);
         if (owner.type === "list") {
           if (key.type !== "int") {
-            ip.runtime(`a list index must be an int, got '${typeName(key)}'`, span);
+            ip.runtime(indexTypeError("list", key), span);
           }
           const i = key.value;
           if (i < 0 || i >= owner.items.length) {
@@ -2903,7 +2924,7 @@ export class Interpreter {
     if (object.type === "list") {
       if (index.type !== "int") {
         return this.runtime(
-          `a list index must be an int, got '${typeName(index)}'`,
+          indexTypeError("list", index),
           span,
         );
       }
@@ -2938,7 +2959,7 @@ export class Interpreter {
       // anyone would write it, and it is how the pathfinding example reads its walls.
       if (index.type !== "int") {
         return this.runtime(
-          `a string index must be an int, got '${typeName(index)}'`,
+          indexTypeError("string", index),
           span,
         );
       }
@@ -2961,7 +2982,7 @@ export class Interpreter {
       // into an `at` slot AND `step[0]` reads the component.
       if (index.type !== "int") {
         return this.runtime(
-          `a tuple index must be an int, got '${typeName(index)}'`,
+          indexTypeError("tuple", index),
           span,
         );
       }

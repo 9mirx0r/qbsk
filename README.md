@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/logo.png" alt="QBSKáthi" width="820">
+  <img src="docs/assets/logo.svg" alt="QBSKáthi" width="820">
 </p>
 
 <p align="center"><b>A programming language for making games entirely out of characters.</b></p>
@@ -57,7 +57,7 @@ handling are already in the engine; what comes next is making them cheap enough 
 real 3D game on.
 
 <p align="center">
-  <img src="docs/assets/roadmap.png" alt="The language, the engine, the Studio, and ASCII 3D ahead" width="920">
+  <img src="docs/assets/roadmap.svg" alt="The language, the engine, the Studio, and ASCII 3D ahead" width="920">
 </p>
 
 ---
@@ -115,7 +115,7 @@ npm run studio
 | `examples/` | **46 runnable programs**, from four lines to a playable first-person demo |
 | `docs/` | the specification: `language.md`, `engine.md`, `audio.md`, `studio.md`, and `tour.md` |
 | `skills/` | **the manual — read this before writing QBSK** |
-| `tests/` | **1,860 tests green across 102 files**, with 26 byte-for-byte golden outputs |
+| `tests/` | **1,867 tests green across 103 files**, with 26 byte-for-byte golden outputs |
 | `bench/` | the performance harness and its recorded baselines |
 
 ### `skills/` is not optional reading
