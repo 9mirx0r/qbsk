@@ -52,13 +52,21 @@ feature that happens to be silent.
 **Fast enough to stop thinking about.** The engine composes double-buffered, diffs frames
 and emits only what changed.
 
-**Next:** enough performance headroom for fully ASCII 3D. The raycaster and the depth
-handling are already in the engine; what comes next is making them cheap enough to build a
-real 3D game on.
+**Next:** enough performance headroom for fully ASCII 3D.
 
-<p align="center">
-  <img src="docs/assets/roadmap.svg" alt="The language, the engine, the Studio, and ASCII 3D ahead" width="920">
-</p>
+---
+
+## Where it is
+
+```
+ [x]  THE LANGUAGE    lexer, parser, interpreter, closures, modules, CLI
+ [x]  THE ENGINE      compositor, double buffer, frame diffing, ANSI truecolor
+ [x]  THE STUDIO      desktop editor, WebGL painter, live preview
+
+ [ ]  ASCII 3D        the raycaster and the depth handling are already in the
+                      engine. What is left is making them cheap enough to
+                      build a real 3D game on, and that is the next stretch.
+```
 
 ---
 
