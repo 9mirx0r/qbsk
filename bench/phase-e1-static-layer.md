@@ -7,7 +7,7 @@ before build is commit `34ec4f5` in a detached worktree; both builds use the sam
 ## Commands
 
 ```powershell
-git worktree add --detach C:\Users\emir\AppData\Local\Temp\agent\qbsk-e1-before 34ec4f5
+git worktree add --detach /tmp/qbsk-e1-before 34ec4f5
 npm.cmd run build
 node dist/cli/main.js profile bench/static-layer-12k.qbsk --frames 60
 ```
