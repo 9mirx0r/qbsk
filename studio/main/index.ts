@@ -23,7 +23,7 @@ import type {
   SceneRun,
   TilesetLoad,
 } from "../shared/api.js";
-import { clip, orderRows } from "../shared/inspect.js";
+import { clip, MAX_ROWS, orderRows } from "../shared/inspect.js";
 
 // The live program and its clock (docs/studio.md §14.4). Module-level because there
 // is exactly one window and exactly one live program; a second would mean two clocks
@@ -404,7 +404,7 @@ void app.whenReady().then(() => {
 
   ipcMain.handle("studio:inspect", (): InspectState => {
     if (liveHost === null) {
-      return { live: false, rows: [] };
+      return { live: false, rows: [], total: 0 };
     }
     const host = liveHost;
     const rows: InspectRow[] = [];
@@ -414,7 +414,9 @@ void app.whenReady().then(() => {
         rows.push({ name, type: found.type, text: clip(found.text) });
       }
     }
-    return { live: true, rows: orderRows(rows) };
+    // Capped HERE so the cap bounds the IPC message too, not only the DOM.
+    const ordered = orderRows(rows);
+    return { live: true, rows: ordered.slice(0, MAX_ROWS), total: ordered.length };
   });
 
   ipcMain.handle("studio:stopLive", () => {

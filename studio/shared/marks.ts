@@ -39,6 +39,34 @@ export function lineCount(source: string): number {
 }
 
 /**
+ * The span of lines the mark covers, or null when there is nothing marked.
+ *
+ * Split out from `gutterRows` because the gutter is maintained INCREMENTALLY: rebuilding
+ * every row on every keystroke cost 32 ms on a 3,000-line file, which is two dropped
+ * frames per character typed. The row numbers only change when the line COUNT changes,
+ * and the marked range only changes when a run fails, so the two are tracked apart.
+ */
+export function markedRange(mark: ErrorMark | null): { from: number; to: number } | null {
+  if (mark === null) {
+    return null;
+  }
+  // An end BEFORE the start would mark nothing and leave the old mark on screen; a span
+  // that arrives inverted is still a span.
+  return { from: Math.min(mark.line, mark.endLine), to: Math.max(mark.line, mark.endLine) };
+}
+
+/** Are these the same marked range? */
+export function sameRange(
+  a: { from: number; to: number } | null,
+  b: { from: number; to: number } | null,
+): boolean {
+  if (a === null || b === null) {
+    return a === b;
+  }
+  return a.from === b.from && a.to === b.to;
+}
+
+/**
  * The rows of the gutter: the number to show, and whether the error is on it.
  *
  * The whole span is marked, not just its first line, because a multi-line span means the

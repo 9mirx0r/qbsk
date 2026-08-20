@@ -7,6 +7,8 @@ import {
   gutterRows,
   headline,
   lineCount,
+  markedRange,
+  sameRange,
   selectionFor,
   stripText,
   type ErrorMark,
@@ -217,5 +219,31 @@ describe("the gutter cannot go stale (the bug the DOM tests could not see)", () 
     const body = source.slice(start, source.indexOf("}", start));
     expect(body).toContain("showError(null)");
     expect(body).toContain("updateLnCol()");
+  });
+});
+
+describe("the marked range, tracked apart from the row numbers", () => {
+  it("is null when nothing failed", () => {
+    expect(markedRange(null)).toBeNull();
+  });
+
+  it("covers one line for a single-line span", () => {
+    expect(markedRange(mark({ line: 4, endLine: 4 }))).toEqual({ from: 4, to: 4 });
+  });
+
+  it("covers the whole span when it crosses lines", () => {
+    expect(markedRange(mark({ line: 2, endLine: 5 }))).toEqual({ from: 2, to: 5 });
+  });
+
+  it("survives a span that arrives inverted", () => {
+    // Marked nothing and left the previous mark on screen, before this.
+    expect(markedRange(mark({ line: 7, endLine: 3 }))).toEqual({ from: 3, to: 7 });
+  });
+
+  it("compares two ranges, nulls included", () => {
+    expect(sameRange(null, null)).toBe(true);
+    expect(sameRange(null, { from: 1, to: 1 })).toBe(false);
+    expect(sameRange({ from: 1, to: 2 }, { from: 1, to: 2 })).toBe(true);
+    expect(sameRange({ from: 1, to: 2 }, { from: 1, to: 3 })).toBe(false);
   });
 });

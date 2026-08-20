@@ -8,8 +8,14 @@ import { choosePainter, type Painter } from "./painter.js";
 import { showFatal, BOOT_HINT } from "./fatal.js";
 import { CRT_PRESETS, crtById } from "./glshader.js";
 import { fitFontSize, gridForBox, snapToFontGrid, CELL_ASPECT, cellAspectFor } from "./fit.js";
-import { gutterRows, selectionFor, stripText } from "../shared/marks.js";
-import { emptyText } from "../shared/inspect.js";
+import {
+  lineCount,
+  markedRange,
+  sameRange,
+  selectionFor,
+  stripText,
+} from "../shared/marks.js";
+import { emptyText, moreText } from "../shared/inspect.js";
 import { recentLabel } from "../shared/recent.js";
 import type { InspectState } from "../shared/api.js";
 import type { ErrorMark } from "../shared/marks.js";
@@ -510,6 +516,15 @@ function drawInspector(state: InspectState): void {
     line.append(name, type, value);
     inspector.appendChild(line);
   }
+  // What the cap left out. Said rather than silently dropped: a pane that shows 200 of
+  // 1,201 names without saying so is lying about what the program holds.
+  const more = moreText(state.rows.length, state.total);
+  if (more !== "") {
+    const note = document.createElement("div");
+    note.className = "ins-empty";
+    note.textContent = more;
+    inspector.appendChild(note);
+  }
 }
 
 async function refreshInspector(force = false): Promise<void> {
@@ -748,25 +763,66 @@ async function init(): Promise<void> {
 /** The mark from the last run, or null when the last run succeeded. */
 let currentMark: ErrorMark | null = null;
 
+/** How many rows the gutter currently HAS, so it can be grown or trimmed. */
+let gutterCount = 0;
+/** Which rows currently carry the mark, so it is only moved when it moves. */
+let gutterMark: { from: number; to: number } | null = null;
+
 /**
- * Redraws the line numbers, marking the error's lines.
+ * Brings the gutter to the number of lines the editor holds.
+ *
+ * MAINTAINED rather than rebuilt. Rebuilding every row on every `input` cost 32 ms per
+ * keystroke on a 3,000-line file -- two dropped frames per character -- and it was
+ * rebuilding to produce exactly the same numbers, because typing inside a line does not
+ * change any of them. Only pressing Enter or deleting a newline does, and that adds or
+ * removes one row at the END, where the numbering of the others is unaffected.
  *
  * One row element per line rather than one text node, because the mark is a background
  * on a row: a marker CHARACTER would shift the digits and make that one line's numbers
  * sit a column further right than every other.
  */
 function drawGutter(): void {
-  const rows = gutterRows(editor.value, currentMark);
-  gutter.replaceChildren();
-  for (const row of rows) {
+  const want = lineCount(editor.value);
+  for (let n = gutterCount; n < want; n += 1) {
     const div = document.createElement("div");
-    div.textContent = String(row.line);
-    if (row.bad) {
-      div.className = "gut-bad";
-    }
+    div.textContent = String(n + 1);
     gutter.appendChild(div);
   }
+  for (let n = gutterCount; n > want; n -= 1) {
+    gutter.lastElementChild?.remove();
+  }
+  if (want !== gutterCount) {
+    gutterCount = want;
+    // Rows the mark was on may have just been deleted, so it is re-applied from scratch
+    // rather than trusted. Cheap: it touches at most the marked lines.
+    gutterMark = null;
+  }
+  markGutter();
   gutter.scrollTop = editor.scrollTop;
+}
+
+/** Moves the mark, and does nothing at all when it has not moved. */
+function markGutter(): void {
+  const want = markedRange(currentMark);
+  if (sameRange(want, gutterMark)) {
+    return;
+  }
+  paintRange(gutterMark, "");
+  paintRange(want, "gut-bad");
+  gutterMark = want;
+}
+
+function paintRange(range: { from: number; to: number } | null, cls: string): void {
+  if (range === null) {
+    return;
+  }
+  for (let line = range.from; line <= range.to; line += 1) {
+    // Guarded: a mark can outlive the lines it was on if the author deleted them.
+    const row = gutter.children[line - 1];
+    if (row !== undefined) {
+      row.className = cls;
+    }
+  }
 }
 
 /** Shows or clears the strip under the editor. */
@@ -815,7 +871,19 @@ function setEditorSource(text: string): void {
   updateLnCol();
 }
 
-editor.addEventListener("input", drawGutter);
+editor.addEventListener("input", () => {
+  // §18.3 — the first edit after a failure drops the MARK, and keeps the message.
+  //
+  // A textarea cannot move a mark with the text under it, so a mark left in place points
+  // at whichever line happens to have that number now. Deleting the failing line and
+  // adding two elsewhere brought the red line back on unrelated code -- which is the
+  // language`s one unforgivable sin, an error that points at the wrong thing.
+  //
+  // The strip stays, because "line 3, col 11: ..." is still a true statement about the
+  // last run, and it is what the author is reading while typing the fix.
+  currentMark = null;
+  drawGutter();
+});
 editor.addEventListener("scroll", () => {
   gutter.scrollTop = editor.scrollTop;
 });

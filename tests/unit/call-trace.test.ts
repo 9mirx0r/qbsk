@@ -46,7 +46,10 @@ describe("the route, innermost first", () => {
     const out = shown("var xs = [1, 2]", "print(str(xs[1.5]))");
     expect(out).toContain("must be an int");
     expect(out).not.toContain("\n   in ");
-    expect(out).not.toContain("from ");
+    // Matched against the TRACE's own shape, not against the bare word. This asserted
+    // `not.toContain("from ")` and broke the day an error message used the English word
+    // "from" in a hint -- a test that fails on prose is testing the prose.
+    expect(out).not.toContain(NL + "   from ");
   });
 
   it("keeps the span and the fragment it always had", () => {

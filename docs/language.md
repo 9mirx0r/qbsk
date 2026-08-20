@@ -2283,6 +2283,24 @@ different depending on who called it. It is refused at the boundary.
 An unlabelled `break` is unchanged in every respect, including the loop it leaves: the
 innermost one.
 
+**Two loops may carry the same name, and the innermost one wins.** Not a special case in
+the implementation — it falls out of a signal travelling outward until a loop claims it,
+and the first to claim it is the nearest. Found by trying it rather than by designing it,
+which is why it is written down here: an undocumented rule that falls out of an
+implementation is a rule that changes the next time the implementation does.
+
+**Measured** (§13.1, paired, alternating order, against the build before this change):
+the labelled break is **7% FASTER than the flag idiom it replaces** — 66.4 ms against
+61.8 ms over 20,000 searches of a 40×40 grid — because the flag costs a condition
+test on every outer iteration and the label costs nothing until it is thrown.
+
+An unlabelled loop pays one null check on entry and nothing per iteration. That is only
+true because the name is read at COMPILE time: the first version read `stmt.label` inside
+the loop closure, which made the closure capture the whole AST node, and that measured
+**+4.1% on a 6,000,000-iteration while loop**. Hoisting it out removed the difference.
+The lesson is not about labels — it is that a closure in `compileStmt` capturing `stmt`
+is a per-iteration cost even when the value it wants is a constant.
+
 ### 15.23 A line that ends with an operator is not finished (I3)
 
 §15.14 made a line break inside `( )`, `[ ]` or `{ }` carry no meaning, so a long call
@@ -2347,6 +2365,45 @@ cannot leave the indent stack askew.
 
 An indented continuation is still just layout — the indentation of a continuation line
 means nothing, exactly as inside a bracket.
+
+**Measured**: lexing an 8,000-line file went from 8.71 ms to 9.16 ms — 0.45 ms, once,
+when a program is loaded. Lexing is not on the frame path and this is a set lookup per
+physical line.
+
+### 15.24 An error from a module shows the module's own line (I3)
+
+Found by auditing §15.20 rather than by using it. An error raised inside a `use`d module
+printed a correct header, a correct trace — and a source fragment taken from the WRONG
+FILE:
+
+```
+lib.qbsk:2:12 — runtime: a list index must be an int, got 'float'
+  |
+2 |     return xs[at]              <- what it should have shown
+```
+
+```
+lib.qbsk:2:12 — runtime: a list index must be an int, got 'float'
+  |
+2 | func caller()                  <- what it did show: line 2 of the ENTRY file
+```
+
+`qbskFragment` indexed whatever source string it was handed, and the caller only ever has
+the entry file's text. So the caret sat under an unrelated line, with the right number
+beside it — which is worse than no fragment at all, because it is confidently wrong
+about the one thing an author reads first.
+
+§15.20 did not cause this; it made it visible, by printing file names in the trace and
+so putting the lie next to the truth.
+
+**The error carries its own source.** `QbskError.sourceText` is filled at throw time from
+a map of the modules this interpreter loaded. Not a registry keyed by file name: two runs
+with a file of the same name are ordinary — every test in this repository calls its file
+`t.qbsk` — and a shared map would show one program the other's line. The map is an
+instance field, so it dies with the interpreter that built it.
+
+An error in the entry file is unchanged in every respect: the entry is not in the map, so
+the formatter falls back to the source it was handed.
 
 ### 15.11 A program can raise its own error — `fail` (I2, I3)
 

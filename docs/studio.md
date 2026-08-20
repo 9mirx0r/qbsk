@@ -1209,6 +1209,22 @@ the gutter was empty at boot and showed the previous file's numbers after openin
 one. Fixing the two sites would have left the third to be written later, so there is one
 door and a test that says so.
 
+**The gutter is MAINTAINED, not rebuilt.** Rebuilding every row on every `input` measured
+**32.19 ms per keystroke on a 3,000-line file** in the real window — two dropped frames
+per character typed — and it was rebuilding to produce the same numbers, because typing
+inside a line changes none of them. Only pressing Enter or deleting a newline changes the
+count, and that adds or removes one row at the END. Maintaining it instead: **0.71 ms**,
+45× faster. The marked range is tracked separately from the row count for the same
+reason: it only changes when a run fails.
+
+**The first edit after a failure drops the mark and keeps the message.** A `<textarea>`
+cannot move a mark with the text under it, so a mark left in place points at whichever
+line happens to carry that number now. Deleting the failing line and adding two elsewhere
+brought the red line back on unrelated code — found by shrinking and growing a document
+in the real window and reading the DOM back. The strip stays, because "line 3, col 11: ..."
+is still a true statement about the last run and it is what the author is reading while
+typing the fix.
+
 **The selection is clamped.** The offsets come from a run and the author can type before
 clicking the strip. Unclamped, a document that got shorter throws inside the DOM —
 which is the fatal overlay appearing because someone pressed backspace.
@@ -1259,6 +1275,12 @@ silently omitted half the names would be lying about what the program holds.
 **Two different nothings.** "No program is running — press Run" and "the program is
 running and holds no names" are not the same message. Saying "no variables" to someone who
 has not pressed Run sends them looking for a bug in their code.
+
+**The pane shows at most 200 rows, and says how many it left out.** Measured with a
+program holding 1,201 top-level names: **12.7 ms per refresh and an 85 KB IPC message,
+four times a second** — enough to drop a frame of a running scene every quarter second.
+Capped: **2.8 ms and 14.7 KB**. Nobody reads 1,201 rows; a pane that showed 200 of them
+without saying so would be lying about what the program holds.
 
 **Rows are built with `textContent`.** Every string in this pane was made up by the program
 being inspected, and this is the one pane whose entire job is showing them.

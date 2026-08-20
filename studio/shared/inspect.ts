@@ -31,6 +31,16 @@ export function clip(text: string, max: number = MAX_TEXT): string {
 }
 
 /**
+ * How many rows the pane will show.
+ *
+ * A cap, not a preference. Measured in the real window, a program holding 1,201 top-level
+ * names cost 12.7 ms per refresh and an 85 KB IPC message four times a second, which drops
+ * a frame of a running scene every quarter second. Nobody reads 1,201 rows, so the pane
+ * shows the first 200 and SAYS how many it left — a bounded cost whatever the program.
+ */
+export const MAX_ROWS = 200;
+
+/**
  * Values first, functions last.
  *
  * A program of any size declares more functions than variables, and the functions do not
@@ -59,4 +69,10 @@ export function emptyText(live: boolean): string {
   return live
     ? "the program is running and holds no names"
     : "no program is running — press Run";
+}
+
+/** The sentence for the rows the cap left out, or "" when it left none out. */
+export function moreText(shown: number, total: number): string {
+  const hidden = total - shown;
+  return hidden <= 0 ? "" : `… and ${hidden} more`;
 }

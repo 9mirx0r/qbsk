@@ -3,6 +3,20 @@ import type { Span } from "../lexer/token.js";
 export type QbskErrorKind = "syntax" | "semantic" | "runtime";
 
 export class QbskError extends Error {
+  /**
+   * The source of the file this error's span names, when that is NOT the file the
+   * formatter will be handed (§15.24).
+   *
+   * An error inside a `use`d module names the module in its span, while the caller has
+   * only the entry file's text — so the fragment was drawn by taking the module's
+   * LINE NUMBER and reading that line out of the ENTRY file. The header was right, the
+   * trace was right, and the caret sat under an unrelated line.
+   *
+   * Carried on the error rather than looked up in a registry: a registry keyed by file
+   * name is shared state that goes stale the moment two runs use the same name, which
+   * every test in this repository does.
+   */
+  sourceText?: string;
   constructor(
     message: string,
     public readonly span: Span,
@@ -84,7 +98,8 @@ export function formatQbskError(source: string, err: QbskError): string {
 // so the structured error and the terminal error show the same fragment.
 export function qbskFragment(source: string, err: QbskError): string {
   const { start, end } = err.span;
-  const lines = source.split("\n");
+  // §15.24 — the module's own text when the error came from one.
+  const lines = (err.sourceText ?? source).split("\n");
   if (start.line < 1 || start.line > lines.length) {
     return "";
   }

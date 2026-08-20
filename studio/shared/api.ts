@@ -9,7 +9,10 @@ export type { InspectRow };
 export interface InspectState {
   /** False when nothing is running — a different sentence from "no names". */
   live: boolean;
+  /** At most `MAX_ROWS` of them (docs/studio.md §19). */
   rows: InspectRow[];
+  /** How many the program actually holds, so the pane can say what it left out. */
+  total: number;
 }
 
 // Shared, transport-safe shapes for the IPC boundary between the main process
